@@ -49,7 +49,7 @@ Crie uma chave em <https://console.groq.com/keys> e cole em `nexumcell-config.js
 4. **Firestore → Regras**: cole o conteúdo de `firestore.rules` → **Publicar**.
 5. **Configurações do projeto → Seus apps → Web (`</>`)** → copie o `firebaseConfig` e cole em `painel/nexumcell-config.js`.
 6. Publique a pasta `painel` inteira (GitHub Pages ou domínio próprio — dá para pôr cada portal num subdomínio, como no NEXUM, desde que o `nexumcell-config.js` vá junto). Em *Authentication → Configurações → Domínios autorizados*, adicione o domínio.
-7. Crie seu usuário em *Authentication → Usuários → Adicionar usuário* e entre pelo **`dono.html`**. **O primeiro login no Painel do Dono vira o Dono.**
+7. Crie em *Authentication → Usuários → Adicionar usuário* o e-mail do dono (**wevellenerrera21@gmail.com**, definido em `nexumcell-config.js` e nas regras). Esse e-mail entra em **todos os portais** como Dono; os demais acessos são criados por ele em *Equipe*.
 8. No Painel do Dono, em **Lojas e configurações**: cadastre as lojas, juros, tolerância, chave PIX, telefone do suporte. Em **Equipe**, crie os acessos.
 
 > Não restrinja a chave de API (apiKey) por site/domínio no Google Cloud: os celulares usam a mesma chave.
