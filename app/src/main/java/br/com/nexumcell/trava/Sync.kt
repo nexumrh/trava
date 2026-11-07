@@ -43,10 +43,19 @@ object Sync {
         }
 
         val d = st.cache() ?: return online
-        val r = Decisao.avaliar(d, agora, st.ultimoSyncOk)
+        var r = Decisao.avaliar(d, agora, st.ultimoSyncOk)
+
+        // Antifraude: o IMEI real deste aparelho precisa ser o mesmo do contrato
+        val doAparelho = listOf(imei(ctx, 0), imei(ctx, 1)).filter { it.length == 15 }
+        val doContrato = listOf(d.optString("imei"), d.optString("imei2")).filter { it.length == 15 }
+        val imeiConfere = doAparelho.isEmpty() || doContrato.isEmpty() || doAparelho.any { it in doContrato }
+        imeiConfereCache = imeiConfere
+        if (!imeiConfere && !r.final) {
+            r = Resultado(true, "O IMEI deste aparelho não confere com o contrato. Procure a loja.")
+        }
 
         // Check-in só quando o estado muda ou a cada 3 h (economiza a cota grátis do Firestore).
-        val estado = "${r.travar}|${r.final}"
+        val estado = "${r.travar}|${r.final}|$imeiConfere"
         if (online && (estado != st.ultimoEstado || agora - st.ultimoCheckin > CHECKIN_MS)) {
             try {
                 Api(ctx).enviarCheckin(checkin(ctx, r))
@@ -71,6 +80,8 @@ object Sync {
         return n
     }
 
+    @Volatile private var imeiConfereCache: Boolean = true
+
     private fun checkin(ctx: Context, r: Resultado): Map<String, Any?> = mapOf(
         "em" to System.currentTimeMillis(),
         "imei" to imei(ctx, 0),
@@ -80,6 +91,7 @@ object Sync {
         "motivo" to r.motivo,
         "finalizado" to r.final,
         "deviceOwner" to Policy.isOwner(ctx),
+        "imeiConfere" to imeiConfereCache,
         "versao" to BuildConfig.VERSION_NAME,
         "modelo" to "${Build.MANUFACTURER} ${Build.MODEL}",
         "android" to Build.VERSION.RELEASE
