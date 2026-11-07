@@ -18,6 +18,12 @@ object Decisao {
         if (d.optBoolean("quitado") || status == "QUITADO") return Resultado(false, "Contrato quitado", true)
         if (status == "CANCELADO") return Resultado(false, "Contrato cancelado", true)
 
+        // cliente comunicou roubo, furto ou perda pelo portal: trava até a loja liberar
+        val roubo = d.optJSONObject("roubo")
+        if (roubo != null && roubo.optLong("liberadoEm", 0L) == 0L) {
+            return Resultado(true, "Aparelho com comunicação de ${roubo.optString("tipo", "roubo").lowercase()}. Se você encontrou este celular, entregue em uma loja ${d.optString("lojaNome", "NexumCell")}.")
+        }
+
         when (d.optString("modo")) {
             "TRAVAR" -> return Resultado(true, "Bloqueio solicitado pela loja")
             "LIBERAR" -> return Resultado(false, "Liberado pela loja")
