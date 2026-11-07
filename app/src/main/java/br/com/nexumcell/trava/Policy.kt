@@ -44,6 +44,9 @@ object Policy {
         tenta("perm phone") {
             dpm.setPermissionGrantState(a, ctx.packageName, Manifest.permission.READ_PHONE_STATE, DevicePolicyManager.PERMISSION_GRANT_STATE_GRANTED)
         }
+        if (Build.VERSION.SDK_INT >= 33) tenta("perm notif") {
+            dpm.setPermissionGrantState(a, ctx.packageName, Manifest.permission.POST_NOTIFICATIONS, DevicePolicyManager.PERMISSION_GRANT_STATE_GRANTED)
+        }
         if (Build.VERSION.SDK_INT >= 30) tenta("autoTime") { dpm.setAutoTimeEnabled(a, true) }
         else tenta("autoTimeRequired") { @Suppress("DEPRECATION") dpm.setAutoTimeRequired(a, true) }
         tenta("lockTaskPackages") { dpm.setLockTaskPackages(a, pacotesPermitidos(ctx)) }

@@ -55,6 +55,24 @@ object Faturas {
 
     private fun r2(x: Double) = Math.round(x * 100) / 100.0
 
+    /**
+     * Quitação antecipada (CDC art. 52, §2º): parcelas ainda não vencidas são cobradas só pela parte do valor
+     * financiado, sem os juros. Vencidas entram com multa e juros. Retorna (valor para quitar, economia) ou null.
+     */
+    fun quitacao(d: JSONObject): Pair<Double, Double>? {
+        val fin = d.optDouble("financiado", 0.0); val n = d.optInt("nParcelas", 0)
+        if (fin <= 0 || n <= 0) return null
+        val principal = fin / n
+        var total = 0.0; var cheio = 0.0
+        for (f in lista(d)) {
+            if (f.pago) continue
+            cheio += if (f.diasAtraso > 0) f.aPagar else f.valor
+            total += if (f.diasParaVencer > 0) minOf(principal, f.valor) else f.aPagar
+        }
+        if (total <= 0) return null
+        return r2(total) to r2(cheio - total)
+    }
+
     /** PIX copia e cola (BR Code estático com valor). */
     fun pix(d: JSONObject, valor: Double, txid: String): String? {
         val chave = d.optString("chavePix").trim()

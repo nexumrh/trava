@@ -59,6 +59,12 @@ class Store(ctx: Context) {
     var ultimoEstado: String
         get() = s("ultimoEstado")
         set(v) { ps("ultimoEstado", v) }
+    var ultimaChecagemUpdate: Long
+        get() = l("ultimaChecagemUpdate")
+        set(v) { pl("ultimaChecagemUpdate", v) }
+    var avisosEnviados: String
+        get() = s("avisosEnviados")
+        set(v) { ps("avisosEnviados", v) }
     var finalizado: Boolean
         get() = p.getBoolean("finalizado", false)
         set(v) { p.edit().putBoolean("finalizado", v).commit() }

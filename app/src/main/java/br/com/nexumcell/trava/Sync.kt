@@ -65,6 +65,9 @@ object Sync {
         }
         Policy.aplicar(ctx, d, r)
 
+        try { Notificador.avisar(ctx, d) } catch (e: Exception) { Log.w(TAG, "avisos: ${e.message}") }
+        if (online) Updater.verificar(ctx)
+
         // Pagamento confirmado: mostra "Parabéns, suas faturas estão em dia"
         val pagasAgora = pagas(d)
         if (pagasAntes >= 0 && !r.travar && (pagasAgora > pagasAntes || (estavaTravado && !r.final))) {

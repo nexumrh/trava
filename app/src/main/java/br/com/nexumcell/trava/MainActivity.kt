@@ -74,6 +74,14 @@ class MainActivity : Activity() {
             if ((d.optDouble("descontoPct", 0.0)) > 0) append("\nPague antes do vencimento e ganhe ${d.optDouble("descontoPct").toInt()}% de desconto.")
         }
         Faturas.desenhar(this, lista, d)
+        Faturas.quitacao(d)?.let { (valor, economia) ->
+            if (economia > 0.01) lista.addView(android.widget.Button(this).apply {
+                text = "Quitar o contrato agora: ${Faturas.brl.format(valor)} (economize ${Faturas.brl.format(economia)})"
+                isAllCaps = false; setTextColor(android.graphics.Color.parseColor("#0E8A5F"))
+                setBackgroundResource(R.drawable.btn_outline_claro)
+                setOnClickListener { Faturas.mostrarPix(this@MainActivity, d, valor, "Quitação antecipada do contrato nº ${d.optLong("vendaNumero")}", "NXC${d.optLong("vendaNumero")}Q") }
+            })
+        }
         val loja = listOf(d.optString("lojaNome"), d.optString("lojaTelefone")).filter { it.isNotEmpty() }.joinToString(" · ")
         rodape.text = buildString {
             if (loja.isNotEmpty()) append("Loja: $loja\n")

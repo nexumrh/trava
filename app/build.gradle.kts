@@ -13,6 +13,7 @@ android {
         targetSdk = 34
         versionCode = (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0) + 2
         versionName = "1.1"
+        buildConfigField("String", "UPDATE_API", "\"https://api.github.com/repos/nexumrh/trava/releases/latest\"")
     }
 
     // Assinatura: o GitHub Actions passa a chave pelos secrets (nunca fica no repositório)
