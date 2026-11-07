@@ -31,7 +31,7 @@ Tudo funciona no **plano grátis (Spark)** do Firebase, sem Cloud Functions, e o
    - **IMEI antifraude**: o sistema recusa IMEI com dígito verificador errado (inventado), exige a foto da tela *#06# (a IA confere com o digitado) e a consulta oficial do Celular Legal (Anatel). IMEI impedido/irregular **reprova a venda** e abre chamado. Depois da instalação, o app compara o IMEI real do aparelho: se não for o do contrato, **bloqueia na hora**.
    6. **Contrato** com assinatura na tela.
    7. **Entrada**: o aparelho só sai da loja depois de registrar a entrada recebida.
-   8. **Trava**: vídeo/passo a passo de instalação da marca + QR code; a tela mostra ao vivo quando a trava foi instalada.
+   8. **Trava**: vídeo/passo a passo da marca + QR code. A venda fica **“Aguardando trava”** e só é **concluída quando o próprio aparelho confirma** (app como administrador e IMEI certo). Antes disso o botão Concluir fica travado. Se não subir em 10 min ou der erro, aparece o passo a passo para **refazer**, abre chamado automático, e **todos os portais** mostram o alerta “instalação de trava com problema”.
 3. **Equipe → Confirmações**: em até 3 dias, mandar WhatsApp para os 2 telefones confirmando o cadastro, e confirmar o valor da entrada paga. Problema vira chamado.
 4. **App do cliente** (no celular travado): *Minhas faturas* com vencimentos e parcelas, **PIX copia e cola/QR com 5% de desconto** pagando antes do vencimento e **multa + juros** depois. Atrasou além da tolerância → **bloqueio**. O Financeiro dá a baixa → o aparelho **libera** e mostra **“Parabéns! Suas faturas estão em dia. Continue pagando e evite atrasos.”**
 
