@@ -104,18 +104,52 @@ object Faturas {
         return Bitmap.createBitmap(px, tam, tam, Bitmap.Config.RGB_565)
     }
 
-    /** Janela "Pagar com PIX": QR + copia e cola + copiar. */
-    fun mostrarPix(a: Activity, d: JSONObject, valor: Double, descricao: String, txid: String) {
+    /** Janela "Pagar com PIX". Se a loja tiver o servidor Asaas, gera PIX com baixa automática; senão, PIX estático. */
+    fun mostrarPix(a: Activity, d: JSONObject, valor: Double, descricao: String, txid: String, parcela: Int = 0) {
+        val servidor = d.optString("servidorPix").trim().trimEnd('/')
+        val token = Store(a).token
+        if (parcela > 0 && servidor.startsWith("https://") && token.isNotEmpty()) {
+            Toast.makeText(a, "Gerando PIX…", Toast.LENGTH_SHORT).show()
+            Thread {
+                val r = try {
+                    val c = (java.net.URL("$servidor/api/pix").openConnection() as java.net.HttpURLConnection).apply {
+                        requestMethod = "POST"; doOutput = true; connectTimeout = 15000; readTimeout = 20000
+                        setRequestProperty("Content-Type", "application/json")
+                    }
+                    c.outputStream.use { it.write(JSONObject().put("token", token).put("n", parcela).toString().toByteArray()) }
+                    if (c.responseCode == 200) JSONObject(c.inputStream.bufferedReader().readText()) else null
+                } catch (e: Exception) { null }
+                a.runOnUiThread {
+                    val cod = r?.optString("copiaECola").orEmpty()
+                    if (cod.isNotEmpty()) dialogo(a, cod, r!!.optDouble("valor", valor), descricao, true)
+                    else estatico(a, d, valor, descricao, txid)
+                }
+            }.start()
+            return
+        }
+        estatico(a, d, valor, descricao, txid)
+    }
+
+    private fun estatico(a: Activity, d: JSONObject, valor: Double, descricao: String, txid: String) {
         val codigo = pix(d, valor, txid)
         if (codigo == null) {
             Toast.makeText(a, "Chave PIX não cadastrada. Fale com a loja.", Toast.LENGTH_LONG).show(); return
         }
+        dialogo(a, codigo, valor, descricao, false)
+    }
+
+    private fun dialogo(a: Activity, codigo: String, valor: Double, descricao: String, automatico: Boolean) {
+        if (a.isFinishing) return
         val dp = a.resources.displayMetrics.density
         val box = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding((20 * dp).toInt(), (12 * dp).toInt(), (20 * dp).toInt(), 0) }
         box.addView(TextView(a).apply { text = "${brl.format(valor)}\n$descricao"; gravity = Gravity.CENTER; textSize = 16f; setTextColor(Color.parseColor("#0A1733")) })
         box.addView(ImageView(a).apply { setImageBitmap(qr(codigo)); layoutParams = LinearLayout.LayoutParams((230 * dp).toInt(), (230 * dp).toInt()).apply { topMargin = (10 * dp).toInt() } })
         box.addView(TextView(a).apply { text = codigo; textSize = 11f; setTextIsSelectable(true); setTextColor(Color.parseColor("#696784")); setPadding(0, (8 * dp).toInt(), 0, 0) })
-        box.addView(TextView(a).apply { text = "Depois de pagar, envie o comprovante para a loja. Assim que o pagamento for confirmado, o aparelho é liberado automaticamente."; textSize = 13f; setTextColor(Color.parseColor("#1B1A2E")); setPadding(0, (10 * dp).toInt(), 0, 0) })
+        box.addView(TextView(a).apply {
+            text = if (automatico) "O pagamento é confirmado sozinho. Em poucos minutos a parcela aparece como paga e o aparelho é liberado."
+                   else "Depois de pagar, envie o comprovante para a loja. Assim que o pagamento for confirmado, o aparelho é liberado automaticamente."
+            textSize = 13f; setTextColor(Color.parseColor("#1B1A2E")); setPadding(0, (10 * dp).toInt(), 0, 0)
+        })
         AlertDialog.Builder(a).setTitle("Pagar com PIX").setView(box)
             .setPositiveButton("Copiar código PIX") { _, _ ->
                 a.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("PIX", codigo))
@@ -156,7 +190,7 @@ object Faturas {
             if (!f.pago) card.addView(Button(a).apply {
                 text = "Pagar com PIX"; isAllCaps = false; setTextColor(Color.WHITE); setBackgroundResource(R.drawable.btn_azul)
                 layoutParams = LinearLayout.LayoutParams(-1, (46 * dp).toInt()).apply { topMargin = (10 * dp).toInt() }
-                setOnClickListener { mostrarPix(a, d, f.aPagar, "Parcela ${f.n}/${f.total} · vencimento ${f.venc.format(fmt)}", "NXC${num}P${f.n}") }
+                setOnClickListener { mostrarPix(a, d, f.aPagar, "Parcela ${f.n}/${f.total} · vencimento ${f.venc.format(fmt)}", "NXC${num}P${f.n}", f.n) }
             })
             alvo.addView(card)
         }
