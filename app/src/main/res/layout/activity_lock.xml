@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/navy" android:fillViewport="true">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="24dp" android:gravity="center_horizontal">
+
+        <ImageView android:layout_width="64dp" android:layout_height="64dp"
+            android:layout_marginTop="24dp" android:src="@drawable/ic_launcher" android:contentDescription="@string/app_name"/>
+
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" android:text="Aparelho bloqueado"
+            android:textColor="#FFFFFF" android:textSize="26sp" android:textStyle="bold"/>
+
+        <TextView android:id="@+id/tvMotivo" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="6dp" android:gravity="center"
+            android:textColor="@color/gold" android:textSize="16sp" android:textStyle="bold"/>
+
+        <TextView android:id="@+id/tvMensagem" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" android:gravity="center"
+            android:textColor="#CFD8E3" android:textSize="15sp"/>
+
+        <TextView android:id="@+id/tvParcelas" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="18dp" android:background="@drawable/card" android:padding="14dp"
+            android:textColor="#FFFFFF" android:textSize="14sp" android:lineSpacingExtra="3dp"/>
+
+        <TextView android:id="@+id/tvPix" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="12dp" android:background="@drawable/card" android:padding="14dp"
+            android:gravity="center" android:textColor="@color/gold" android:textSize="15sp" android:textIsSelectable="false"/>
+
+        <Button android:id="@+id/btnPagar" android:layout_width="match_parent" android:layout_height="56dp"
+            android:layout_marginTop="22dp" android:background="@drawable/btn_azul"
+            android:text="Pagar agora com PIX" android:textAllCaps="false"
+            android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold"/>
+
+        <Button android:id="@+id/btnVerificar" android:layout_width="match_parent" android:layout_height="56dp"
+            android:layout_marginTop="10dp" android:background="@drawable/btn_gold"
+            android:text="@string/ja_paguei" android:textAllCaps="false"
+            android:textColor="@color/navy" android:textSize="16sp" android:textStyle="bold"/>
+
+        <Button android:id="@+id/btnLoja" android:layout_width="match_parent" android:layout_height="52dp"
+            android:layout_marginTop="10dp" android:background="@drawable/btn_outline"
+            android:text="Ligar para a loja" android:textAllCaps="false" android:textColor="#FFFFFF"/>
+
+        <Button android:id="@+id/btnEmergencia" android:layout_width="match_parent" android:layout_height="52dp"
+            android:layout_marginTop="10dp" android:background="@drawable/btn_outline"
+            android:text="Chamada de emergência (190 · 192 · 193)" android:textAllCaps="false" android:textColor="#FFB4A8"/>
+
+        <TextView android:id="@+id/tvLoja" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="18dp" android:gravity="center" android:textColor="#CFD8E3" android:textSize="14sp"/>
+
+        <TextView android:id="@+id/tvRodape" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="10dp" android:gravity="center" android:textColor="#7F93AB" android:textSize="12sp"/>
+    </LinearLayout>
+</ScrollView>

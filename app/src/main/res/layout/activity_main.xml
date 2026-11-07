@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:background="#F4F4F8">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="#0A1733" android:padding="20dp">
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                <ImageView android:layout_width="36dp" android:layout_height="36dp" android:src="@drawable/ic_launcher" android:contentDescription="@string/app_name"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp"
+                    android:text="NexumCell" android:textColor="#FFFFFF" android:textSize="20sp" android:textStyle="bold"/>
+            </LinearLayout>
+            <TextView android:id="@+id/tvSituacao" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="16dp" android:textColor="#FFFFFF" android:textSize="22sp" android:textStyle="bold"/>
+            <TextView android:id="@+id/tvStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="4dp" android:textColor="#C9D3EA" android:textSize="14sp" android:lineSpacingExtra="3dp"/>
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Minhas faturas"
+                android:textColor="#1B1A2E" android:textSize="17sp" android:textStyle="bold" android:layout_marginBottom="10dp"/>
+            <LinearLayout android:id="@+id/listaFaturas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/>
+            <Button android:id="@+id/btnAtualizar" android:layout_width="match_parent" android:layout_height="50dp"
+                android:layout_marginTop="6dp" android:background="@drawable/btn_outline_claro"
+                android:text="Atualizar" android:textAllCaps="false" android:textColor="#0A1733"/>
+            <TextView android:id="@+id/tvRodape" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="12dp" android:gravity="center" android:textColor="#696784" android:textSize="12sp"/>
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

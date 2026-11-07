@@ -1,0 +1,14 @@
+# NUNCA envie a chave de assinatura para o GitHub
+*.jks
+*.keystore
+keystore.properties
+
+.gradle/
+build/
+app/build/
+app/release/
+local.properties
+.idea/
+*.iml
+.DS_Store
+captures/
