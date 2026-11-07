@@ -20,7 +20,7 @@ class MainActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
-        mostrar()
+        mostrar(); I18n.traduzir(window.decorView)
         atualizar()
     }
 
@@ -30,7 +30,7 @@ class MainActivity : Activity() {
         btn.text = "Atualizando…"
         Thread {
             Sync.executar(applicationContext)
-            runOnUiThread { btn.isEnabled = true; btn.text = "Atualizar"; mostrar() }
+            runOnUiThread { btn.isEnabled = true; btn.text = I18n.t("Atualizar"); mostrar(); I18n.traduzir(window.decorView) }
         }.start()
     }
 

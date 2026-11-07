@@ -57,8 +57,12 @@ object Sync {
         // Check-in só quando o estado muda ou a cada 3 h (economiza a cota grátis do Firestore).
         val chip = chipInfo(ctx)
         chipCache = chip
+        // roubo comunicado com autorização do cliente: manda a localização a cada sincronização
+        val roubo = d.optJSONObject("roubo")
+        val localizar = roubo != null && roubo.optLong("liberadoEm", 0L) == 0L && roubo.optBoolean("localizar")
+        localCache = if (localizar) Localizador.obter(ctx) else null
         val estado = "${r.travar}|${r.final}|$imeiConfere|${r.nivel}|${chip["id"]}"
-        if (online && (estado != st.ultimoEstado || agora - st.ultimoCheckin > CHECKIN_MS)) {
+        if (online && (localizar || estado != st.ultimoEstado || agora - st.ultimoCheckin > CHECKIN_MS)) {
             try {
                 Api(ctx).enviarCheckin(checkin(ctx, r))
                 st.ultimoEstado = estado
@@ -68,6 +72,7 @@ object Sync {
         Policy.aplicar(ctx, d, r)
 
         try { Notificador.avisar(ctx, d) } catch (e: Exception) { Log.w(TAG, "avisos: ${e.message}") }
+        try { Notificador.avisoLoja(ctx, d) } catch (e: Exception) { }
         if (online) Updater.verificar(ctx)
 
         // Pagamento confirmado: mostra "Parabéns, suas faturas estão em dia"
@@ -87,6 +92,7 @@ object Sync {
 
     @Volatile private var imeiConfereCache: Boolean = true
     @Volatile private var chipCache: Map<String, Any?> = emptyMap()
+    @Volatile private var localCache: Map<String, Any?>? = null
 
     /**
      * Identifica o chip em uso sem guardar o número dele: operadora + resumo (SHA-256) do ICCID.
@@ -117,6 +123,7 @@ object Sync {
         "deviceOwner" to Policy.isOwner(ctx),
         "imeiConfere" to imeiConfereCache,
         "chip" to chipCache,
+        "local" to localCache,
         "versao" to BuildConfig.VERSION_NAME,
         "modelo" to "${Build.MANUFACTURER} ${Build.MODEL}",
         "android" to Build.VERSION.RELEASE

@@ -104,12 +104,12 @@ object Faturas {
         return Bitmap.createBitmap(px, tam, tam, Bitmap.Config.RGB_565)
     }
 
-    /** Janela "Pagar com PIX". Se a loja tiver o servidor Asaas, gera PIX com baixa automática; senão, PIX estático. */
+    /** Janela I18n.t("Pagar com PIX"). Se a loja tiver o servidor Asaas, gera PIX com baixa automática; senão, PIX estático. */
     fun mostrarPix(a: Activity, d: JSONObject, valor: Double, descricao: String, txid: String, parcela: Int = 0) {
         val servidor = d.optString("servidorPix").trim().trimEnd('/')
         val token = Store(a).token
         if (parcela > 0 && servidor.startsWith("https://") && token.isNotEmpty()) {
-            Toast.makeText(a, "Gerando PIX…", Toast.LENGTH_SHORT).show()
+            Toast.makeText(a, I18n.t("Gerando PIX…"), Toast.LENGTH_SHORT).show()
             Thread {
                 val r = try {
                     val c = (java.net.URL("$servidor/api/pix").openConnection() as java.net.HttpURLConnection).apply {
@@ -146,16 +146,16 @@ object Faturas {
         box.addView(ImageView(a).apply { setImageBitmap(qr(codigo)); layoutParams = LinearLayout.LayoutParams((230 * dp).toInt(), (230 * dp).toInt()).apply { topMargin = (10 * dp).toInt() } })
         box.addView(TextView(a).apply { text = codigo; textSize = 11f; setTextIsSelectable(true); setTextColor(Color.parseColor("#696784")); setPadding(0, (8 * dp).toInt(), 0, 0) })
         box.addView(TextView(a).apply {
-            text = if (automatico) "O pagamento é confirmado sozinho. Em poucos minutos a parcela aparece como paga e o aparelho é liberado."
-                   else "Depois de pagar, envie o comprovante para a loja. Assim que o pagamento for confirmado, o aparelho é liberado automaticamente."
+            text = I18n.t(if (automatico) "O pagamento é confirmado sozinho. Em poucos minutos a parcela aparece como paga e o aparelho é liberado."
+                   else "Depois de pagar, envie o comprovante para a loja. Assim que o pagamento for confirmado, o aparelho é liberado automaticamente.")
             textSize = 13f; setTextColor(Color.parseColor("#1B1A2E")); setPadding(0, (10 * dp).toInt(), 0, 0)
         })
-        AlertDialog.Builder(a).setTitle("Pagar com PIX").setView(box)
-            .setPositiveButton("Copiar código PIX") { _, _ ->
+        AlertDialog.Builder(a).setTitle(I18n.t("Pagar com PIX")).setView(box)
+            .setPositiveButton(I18n.t("Copiar código PIX")) { _, _ ->
                 a.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("PIX", codigo))
-                Toast.makeText(a, "Código PIX copiado. Cole no app do seu banco.", Toast.LENGTH_LONG).show()
+                Toast.makeText(a, I18n.t("Código PIX copiado. Cole no app do seu banco."), Toast.LENGTH_LONG).show()
             }
-            .setNegativeButton("Fechar", null).show()
+            .setNegativeButton(I18n.t("Fechar"), null).show()
     }
 
     /** Monta os cartões das faturas dentro de um LinearLayout. */
@@ -188,7 +188,7 @@ object Faturas {
                 textSize = 18f; setTextColor(Color.parseColor("#1B1A2E")); setTypeface(typeface, android.graphics.Typeface.BOLD)
             })
             if (!f.pago) card.addView(Button(a).apply {
-                text = "Pagar com PIX"; isAllCaps = false; setTextColor(Color.WHITE); setBackgroundResource(R.drawable.btn_azul)
+                text = I18n.t("Pagar com PIX"); isAllCaps = false; setTextColor(Color.WHITE); setBackgroundResource(R.drawable.btn_azul)
                 layoutParams = LinearLayout.LayoutParams(-1, (46 * dp).toInt()).apply { topMargin = (10 * dp).toInt() }
                 setOnClickListener { mostrarPix(a, d, f.aPagar, "Parcela ${f.n}/${f.total} · vencimento ${f.venc.format(fmt)}", "NXC${num}P${f.n}", f.n) }
             })

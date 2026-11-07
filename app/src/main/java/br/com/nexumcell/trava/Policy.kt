@@ -46,6 +46,8 @@ object Policy {
         }
         if (Build.VERSION.SDK_INT >= 33) tenta("perm notif") {
             dpm.setPermissionGrantState(a, ctx.packageName, Manifest.permission.POST_NOTIFICATIONS, DevicePolicyManager.PERMISSION_GRANT_STATE_GRANTED)
+            dpm.setPermissionGrantState(a, ctx.packageName, Manifest.permission.ACCESS_FINE_LOCATION, DevicePolicyManager.PERMISSION_GRANT_STATE_GRANTED)
+            dpm.setPermissionGrantState(a, ctx.packageName, Manifest.permission.ACCESS_COARSE_LOCATION, DevicePolicyManager.PERMISSION_GRANT_STATE_GRANTED)
         }
         if (Build.VERSION.SDK_INT >= 30) tenta("autoTime") { dpm.setAutoTimeEnabled(a, true) }
         else tenta("autoTimeRequired") { @Suppress("DEPRECATION") dpm.setAutoTimeRequired(a, true) }
@@ -196,6 +198,6 @@ object Policy {
         aplicarFrp(ctx, contas)
         parcial(ctx, r.nivel == 2, d)
         if (r.travar) travar(ctx, r.motivo) else liberar(ctx)
-        try { Notificador.estado(ctx, r) } catch (e: Exception) { }
+        try { Notificador.estado(ctx, r, d) } catch (e: Exception) { }
     }
 }

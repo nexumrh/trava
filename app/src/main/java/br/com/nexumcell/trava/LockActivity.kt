@@ -70,7 +70,7 @@ class LockActivity : Activity() {
     override fun onResume() {
         super.onResume()
         if (!Store(this).travado) { sair(); return }
-        preencher()
+        preencher(); I18n.traduzir(window.decorView)
         try {
             if (Policy.dpm(this).isLockTaskPermitted(packageName)) startLockTask()
         } catch (e: Exception) { }
@@ -94,9 +94,9 @@ class LockActivity : Activity() {
 
     private fun pedirConfianca() {
         android.app.AlertDialog.Builder(this)
-            .setTitle("Liberar por 24 horas?")
-            .setMessage("Você pode usar o celular normalmente por 24 horas, uma vez por mês. As parcelas continuam em atraso, com multa e juros. Depois das 24 horas, se não houver pagamento, o aparelho volta a ser bloqueado.")
-            .setPositiveButton("Liberar") { _, _ ->
+            .setTitle(I18n.t("Liberar por 24 horas?"))
+            .setMessage(I18n.t("Você pode usar o celular normalmente por 24 horas, uma vez por mês. As parcelas continuam em atraso, com multa e juros. Depois das 24 horas, se não houver pagamento, o aparelho volta a ser bloqueado."))
+            .setPositiveButton(I18n.t("Liberar")) { _, _ ->
                 val b = findViewById<Button>(R.id.btnConfianca); b.isEnabled = false
                 Thread {
                     val ok = try {
@@ -108,12 +108,12 @@ class LockActivity : Activity() {
                     } catch (e: Exception) { false }
                     runOnUiThread {
                         b.isEnabled = true
-                        Toast.makeText(this, if (ok) "Liberado por 24 horas. Pague o quanto antes." else "Não foi possível liberar. Verifique a internet ou se já usou este mês.", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, I18n.t(if (ok) "Liberado por 24 horas. Pague o quanto antes." else "Não foi possível liberar. Verifique a internet ou se já usou este mês."), Toast.LENGTH_LONG).show()
                         atualizarConfianca()
                     }
                 }.start()
             }
-            .setNegativeButton("Cancelar", null).show()
+            .setNegativeButton(I18n.t("Cancelar"), null).show()
     }
 
     private fun sair() {
@@ -132,7 +132,7 @@ class LockActivity : Activity() {
         verificando = true
         val btn = findViewById<Button>(R.id.btnVerificar)
         btn.isEnabled = false
-        btn.text = "Verificando…"
+        btn.text = I18n.t("Verificando…")
         Thread {
             val online = Sync.executar(applicationContext)
             runOnUiThread {
@@ -140,7 +140,7 @@ class LockActivity : Activity() {
                 btn.isEnabled = true
                 btn.text = getString(R.string.ja_paguei)
                 if (!Store(this).travado) { sair(); return@runOnUiThread }
-                preencher()
+                preencher(); I18n.traduzir(window.decorView)
                 Toast.makeText(this,
                     if (online) "Pagamento ainda não identificado. Se acabou de pagar, envie o comprovante para a loja."
                     else "Sem internet. Conecte ao Wi-Fi ou dados móveis e tente de novo.",

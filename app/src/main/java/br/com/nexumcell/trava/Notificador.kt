@@ -15,23 +15,44 @@ object Notificador {
     private const val ID_ATRASO = 900
 
     /** Aviso fixo (não dá para dispensar) enquanto houver atraso: etapa 1 (aviso) e 2 (funções limitadas). */
-    fun estado(ctx: Context, r: Resultado) {
+    fun estado(ctx: Context, r: Resultado, d: JSONObject? = null) {
         val nm = ctx.getSystemService(NotificationManager::class.java) ?: return
         if (r.nivel !in 1..2) { nm.cancel(ID_ATRASO); return }
         nm.createNotificationChannel(NotificationChannel(CANAL_ATRASO, "Parcela em atraso", NotificationManager.IMPORTANCE_HIGH))
-        val texto = if (r.nivel == 2) "Redes sociais, vídeos e jogos estão bloqueados até o pagamento. Se o atraso continuar, o aparelho será bloqueado por completo. Toque para pagar com PIX."
-                    else "Você tem parcela em atraso. Pague agora para evitar a limitação e o bloqueio do aparelho. Toque para pagar com PIX."
+        // contagem regressiva até a próxima etapa
+        var dias: Long? = null
+        if (d != null) {
+            val (_, parcial, total) = Decisao.etapas(d)
+            val maior = Faturas.lista(d).filter { !it.pago }.maxOfOrNull { it.diasAtraso } ?: 0L
+            dias = (if (r.nivel == 2) total else parcial) - maior
+        }
+        val texto = I18n.aviso(r.nivel, dias)
         val abrir = PendingIntent.getActivity(ctx, ID_ATRASO, Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val n = Notification.Builder(ctx, CANAL_ATRASO)
             .setSmallIcon(R.drawable.ic_launcher)
-            .setContentTitle(if (r.nivel == 2) "Funções limitadas por atraso" else "Parcela em atraso")
+            .setContentTitle(I18n.t(if (r.nivel == 2) "Funções limitadas por atraso" else "Parcela em atraso"))
             .setContentText(texto)
             .setStyle(Notification.BigTextStyle().bigText(texto))
             .setContentIntent(abrir)
             .setOngoing(true)
             .build()
         try { nm.notify(ID_ATRASO, n) } catch (e: SecurityException) { }
+    }
+
+    /** Aviso em massa enviado pela loja (ex.: feriado). Aparece uma vez por aviso. */
+    fun avisoLoja(ctx: Context, d: JSONObject) {
+        val a = d.optJSONObject("aviso") ?: return
+        val id = a.optString("id"); if (id.isEmpty() || a.optLong("ate", 0L) < System.currentTimeMillis()) return
+        val st = Store(ctx); val enviados = st.avisosEnviados.split(",").toMutableSet()
+        if ("aviso-$id" in enviados) return
+        val nm = ctx.getSystemService(NotificationManager::class.java) ?: return
+        nm.createNotificationChannel(NotificationChannel("loja", "Avisos da loja", NotificationManager.IMPORTANCE_HIGH))
+        val texto = a.optString("texto")
+        val n = Notification.Builder(ctx, "loja").setSmallIcon(R.drawable.ic_launcher)
+            .setContentTitle(I18n.t("Aviso da loja")).setContentText(texto).setStyle(Notification.BigTextStyle().bigText(texto)).setAutoCancel(true).build()
+        try { nm.notify(950, n) } catch (e: SecurityException) { }
+        enviados.add("aviso-$id"); st.avisosEnviados = enviados.filter { it.isNotEmpty() }.takeLast(200).joinToString(",")
     }
 
     fun avisar(ctx: Context, d: JSONObject) {
