@@ -55,7 +55,9 @@ object Sync {
         }
 
         // Check-in só quando o estado muda ou a cada 3 h (economiza a cota grátis do Firestore).
-        val estado = "${r.travar}|${r.final}|$imeiConfere"
+        val chip = chipInfo(ctx)
+        chipCache = chip
+        val estado = "${r.travar}|${r.final}|$imeiConfere|${r.nivel}|${chip["id"]}"
         if (online && (estado != st.ultimoEstado || agora - st.ultimoCheckin > CHECKIN_MS)) {
             try {
                 Api(ctx).enviarCheckin(checkin(ctx, r))
@@ -84,6 +86,24 @@ object Sync {
     }
 
     @Volatile private var imeiConfereCache: Boolean = true
+    @Volatile private var chipCache: Map<String, Any?> = emptyMap()
+
+    /**
+     * Identifica o chip em uso sem guardar o número dele: operadora + resumo (SHA-256) do ICCID.
+     * Se o chip for trocado, o painel avisa a equipe (pode ser revenda do aparelho ou golpe).
+     */
+    @Suppress("MissingPermission", "DEPRECATION")
+    private fun chipInfo(ctx: Context): Map<String, Any?> = try {
+        val sm = ctx.getSystemService(android.telephony.SubscriptionManager::class.java)
+        val subs = try { sm?.activeSubscriptionInfoList.orEmpty() } catch (e: Throwable) { emptyList() }
+        val tm = ctx.getSystemService(TelephonyManager::class.java)
+        val ids = subs.map { s -> (try { s.iccId } catch (e: Throwable) { null }).orEmpty().ifEmpty { "${s.mccString}${s.mncString}${s.carrierName}" } }.sorted()
+        val operadora = subs.joinToString(" + ") { it.carrierName?.toString().orEmpty() }.ifEmpty { tm?.simOperatorName.orEmpty() }
+        val bruto = ids.joinToString("|").ifEmpty { tm?.simOperator.orEmpty() }
+        val id = if (bruto.isEmpty()) "" else java.security.MessageDigest.getInstance("SHA-256").digest(bruto.toByteArray())
+            .joinToString("") { "%02x".format(it) }.take(16)
+        mapOf("id" to id, "operadora" to operadora, "qtd" to subs.size)
+    } catch (e: Throwable) { mapOf("id" to "", "operadora" to "", "qtd" to 0) }
 
     private fun checkin(ctx: Context, r: Resultado): Map<String, Any?> = mapOf(
         "em" to System.currentTimeMillis(),
@@ -96,6 +116,7 @@ object Sync {
         "finalizado" to r.final,
         "deviceOwner" to Policy.isOwner(ctx),
         "imeiConfere" to imeiConfereCache,
+        "chip" to chipCache,
         "versao" to BuildConfig.VERSION_NAME,
         "modelo" to "${Build.MANUFACTURER} ${Build.MODEL}",
         "android" to Build.VERSION.RELEASE
