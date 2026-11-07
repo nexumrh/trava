@@ -65,6 +65,11 @@ class Store(ctx: Context) {
     var avisosEnviados: String
         get() = s("avisosEnviados")
         set(v) { ps("avisosEnviados", v) }
+    // Apps suspensos na etapa "funções limitadas" (para liberar depois)
+    var suspensos: String
+        get() = p.getString("suspensos", "") ?: ""
+        set(v) { p.edit().putString("suspensos", v).apply() }
+
     var finalizado: Boolean
         get() = p.getBoolean("finalizado", false)
         set(v) { p.edit().putBoolean("finalizado", v).commit() }

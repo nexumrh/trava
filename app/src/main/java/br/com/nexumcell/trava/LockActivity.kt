@@ -57,6 +57,7 @@ class LockActivity : Activity() {
             if (total <= 0) { verificar(); return@setOnClickListener }
             Faturas.mostrarPix(this, d, total, "${atrasadas.size} parcela(s) em atraso, com multa e juros", "NXC${d.optLong("vendaNumero")}AT")
         }
+        findViewById<Button>(R.id.btnConfianca).setOnClickListener { pedirConfianca() }
         findViewById<View>(R.id.tvPix).setOnClickListener {
             val pix = Store(this).cache()?.optString("chavePix").orEmpty()
             if (pix.isNotEmpty()) {
@@ -84,6 +85,36 @@ class LockActivity : Activity() {
 
     @Deprecated("Bloqueado de propósito")
     override fun onBackPressed() { /* não sai da tela de bloqueio */ }
+
+    private fun atualizarConfianca() {
+        val st = Store(this); val d = st.cache()
+        val ok = d != null && Decisao.podeConfianca(d) && st.motivo.contains("atraso")
+        findViewById<Button>(R.id.btnConfianca).visibility = if (ok) View.VISIBLE else View.GONE
+    }
+
+    private fun pedirConfianca() {
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Liberar por 24 horas?")
+            .setMessage("Você pode usar o celular normalmente por 24 horas, uma vez por mês. As parcelas continuam em atraso, com multa e juros. Depois das 24 horas, se não houver pagamento, o aparelho volta a ser bloqueado.")
+            .setPositiveButton("Liberar") { _, _ ->
+                val b = findViewById<Button>(R.id.btnConfianca); b.isEnabled = false
+                Thread {
+                    val ok = try {
+                        val ate = System.currentTimeMillis() + 86_400_000L; val mes = Decisao.mesAtual()
+                        Api(this).pedirConfianca(ate, mes)
+                        val st = Store(this); st.cache()?.let { c ->
+                            c.put("confianca", org.json.JSONObject().put("ate", ate).put("mes", mes)); st.cacheJson = c.toString() }
+                        Sync.executar(this); true
+                    } catch (e: Exception) { false }
+                    runOnUiThread {
+                        b.isEnabled = true
+                        Toast.makeText(this, if (ok) "Liberado por 24 horas. Pague o quanto antes." else "Não foi possível liberar. Verifique a internet ou se já usou este mês.", Toast.LENGTH_LONG).show()
+                        atualizarConfianca()
+                    }
+                }.start()
+            }
+            .setNegativeButton("Cancelar", null).show()
+    }
 
     private fun sair() {
         h.removeCallbacks(vigia)
@@ -119,6 +150,7 @@ class LockActivity : Activity() {
     }
 
     private fun preencher() {
+        atualizarConfianca()
         val st = Store(this)
         val d = st.cache()
         findViewById<TextView>(R.id.tvMotivo).text = st.motivo.ifEmpty { "Aparelho bloqueado" }

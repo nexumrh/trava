@@ -91,6 +91,7 @@ object Sync {
         "imei2" to imei(ctx, 1),
         "bateria" to bateria(ctx),
         "travado" to r.travar,
+        "nivel" to r.nivel,
         "motivo" to r.motivo,
         "finalizado" to r.final,
         "deviceOwner" to Policy.isOwner(ctx),

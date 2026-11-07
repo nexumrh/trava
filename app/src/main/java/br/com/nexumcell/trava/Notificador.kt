@@ -11,6 +11,28 @@ import org.json.JSONObject
 /** Avisos no próprio celular: 3 dias antes, no dia do vencimento e 1 dia depois. */
 object Notificador {
     private const val CANAL = "faturas"
+    private const val CANAL_ATRASO = "atraso"
+    private const val ID_ATRASO = 900
+
+    /** Aviso fixo (não dá para dispensar) enquanto houver atraso: etapa 1 (aviso) e 2 (funções limitadas). */
+    fun estado(ctx: Context, r: Resultado) {
+        val nm = ctx.getSystemService(NotificationManager::class.java) ?: return
+        if (r.nivel !in 1..2) { nm.cancel(ID_ATRASO); return }
+        nm.createNotificationChannel(NotificationChannel(CANAL_ATRASO, "Parcela em atraso", NotificationManager.IMPORTANCE_HIGH))
+        val texto = if (r.nivel == 2) "Redes sociais, vídeos e jogos estão bloqueados até o pagamento. Se o atraso continuar, o aparelho será bloqueado por completo. Toque para pagar com PIX."
+                    else "Você tem parcela em atraso. Pague agora para evitar a limitação e o bloqueio do aparelho. Toque para pagar com PIX."
+        val abrir = PendingIntent.getActivity(ctx, ID_ATRASO, Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val n = Notification.Builder(ctx, CANAL_ATRASO)
+            .setSmallIcon(R.drawable.ic_launcher)
+            .setContentTitle(if (r.nivel == 2) "Funções limitadas por atraso" else "Parcela em atraso")
+            .setContentText(texto)
+            .setStyle(Notification.BigTextStyle().bigText(texto))
+            .setContentIntent(abrir)
+            .setOngoing(true)
+            .build()
+        try { nm.notify(ID_ATRASO, n) } catch (e: SecurityException) { }
+    }
 
     fun avisar(ctx: Context, d: JSONObject) {
         val st = Store(ctx)

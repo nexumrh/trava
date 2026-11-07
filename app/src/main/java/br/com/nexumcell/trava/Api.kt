@@ -80,6 +80,14 @@ class Api(ctx: Context) {
     }
 
     /** Atualiza somente o campo "checkin" (as regras do Firestore só permitem isso ao aparelho). */
+    /** Pede a liberação de confiança de 24 h (as regras do Firestore conferem o limite de 1 por mês). */
+    fun pedirConfianca(ate: Long, mes: String) {
+        val info = mapOf("ate" to ate, "mes" to mes, "em" to System.currentTimeMillis())
+        val body = JSONObject().put("fields", JSONObject().put("confianca", Fs.encode(info)))
+        val (code, txt) = http("PATCH", docUrl() + "?updateMask.fieldPaths=confianca", body.toString(), idToken())
+        if (code !in 200..299) throw IOException("Liberação recusada ($code): $txt")
+    }
+
     fun enviarCheckin(info: Map<String, Any?>) {
         val body = JSONObject().put("fields", JSONObject().put("checkin", Fs.encode(info)))
         val (code, txt) = http("PATCH", docUrl() + "?updateMask.fieldPaths=checkin", body.toString(), idToken())

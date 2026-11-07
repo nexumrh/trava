@@ -144,10 +144,39 @@ object Policy {
         st.frpAplicado = chave
     }
 
+    /** Redes sociais, vídeo e jogos populares: bloqueados na etapa "funções limitadas". WhatsApp, banco e ligações continuam. */
+    private val APPS_PARCIAL = listOf(
+        "com.instagram.android", "com.instagram.lite", "com.facebook.katana", "com.facebook.lite",
+        "com.zhiliaoapp.musically", "com.ss.android.ugc.trill", "com.zhiliaoapp.musically.go",
+        "com.kwai.video", "com.kwai.bulldog", "com.google.android.youtube", "com.netflix.mediaclient",
+        "com.twitter.android", "com.snapchat.android", "com.pinterest", "com.spotify.music",
+        "com.dts.freefireth", "com.dts.freefiremax", "com.roblox.client", "com.tencent.ig", "com.supercell.clashroyale"
+    )
+
+    fun parcial(ctx: Context, on: Boolean, d: JSONObject?) {
+        if (!isOwner(ctx) || Build.VERSION.SDK_INT < 24) return
+        val st = Store(ctx); val dpm = dpm(ctx); val a = admin(ctx)
+        val antes = st.suspensos.split(",").filter { it.isNotEmpty() }
+        if (!on) {
+            if (antes.isNotEmpty()) tenta("unsuspend") { dpm.setPackagesSuspended(a, antes.toTypedArray(), false) }
+            st.suspensos = ""; return
+        }
+        val extras = d?.optString("appsParcial").orEmpty().split(",", ";", " ", "\n").map { it.trim() }.filter { it.contains('.') }
+        val instalados = (APPS_PARCIAL + extras).distinct().filter { pkg ->
+            pkg != ctx.packageName && try { ctx.packageManager.getPackageInfo(pkg, 0); true } catch (e: Exception) { false }
+        }
+        val novos = instalados.toSet()
+        val soltar = antes.filter { it !in novos }
+        if (soltar.isNotEmpty()) tenta("unsuspend") { dpm.setPackagesSuspended(a, soltar.toTypedArray(), false) }
+        if (instalados.isNotEmpty()) tenta("suspend") { dpm.setPackagesSuspended(a, instalados.toTypedArray(), true) }
+        st.suspensos = instalados.joinToString(",")
+    }
+
     /** Contrato quitado/cancelado: remove tudo e deixa de ser administrador. */
     fun removerTudo(ctx: Context) {
         val st = Store(ctx)
         liberar(ctx)
+        parcial(ctx, false, null)
         Agendador.cancelar(ctx)
         if (isOwner(ctx)) {
             val dpm = dpm(ctx); val a = admin(ctx)
@@ -165,6 +194,8 @@ object Policy {
         if (r.final) { removerTudo(ctx); return }
         val contas = d.optString("frpContas").split(",", ";", " ", "\n").map { it.trim() }.filter { it.isNotEmpty() }
         aplicarFrp(ctx, contas)
+        parcial(ctx, r.nivel == 2, d)
         if (r.travar) travar(ctx, r.motivo) else liberar(ctx)
+        try { Notificador.estado(ctx, r) } catch (e: Exception) { }
     }
 }
