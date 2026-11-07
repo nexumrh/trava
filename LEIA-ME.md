@@ -21,7 +21,7 @@ Tudo funciona no **plano grátis (Spark)** do Firebase, sem Cloud Functions, e o
 
 ## Como funciona (fluxo da venda)
 
-1. **Dono** cria o acesso do vendedor em *Equipe* (nome, e-mail, telefone, loja). O sistema gera o **ID** (ex.: VND-4821) e a senha, e abre o **e-mail pronto** para enviar. O vendedor só entra com aquele e-mail e senha (Firebase Authentication).
+1. **Dono** cria o acesso do vendedor em *Equipe* (nome, e-mail, telefone, loja). O sistema gera o **ID** (ex.: VND-4821) e uma **senha temporária de 6 dígitos**, e abre o **e-mail pronto** para enviar. O vendedor entra com **ID + senha temporária** e, no primeiro acesso, cria a própria senha. **Esqueci minha senha**: o Firebase manda para o e-mail cadastrado um link para criar uma senha nova (em *Authentication → Templates* deixe o idioma em português).
 2. **Vendedor → Nova venda**, em 8 passos:
    1. **Documento** (RG, CIN ou CNH): foto tirada na hora ou enviada. Foto escura, tremida, estourada ou pequena é **recusada** no próprio celular; depois a **IA lê** nome, CPF, nascimento, RG e mãe e recusa documento ilegível.
    2. **Biometria facial**: só câmera ao vivo. A IA confere se é um rosto real (não foto de tela/papel) e se bate com o documento. Fica guardada só para Dono e Financeiro.
