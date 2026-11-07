@@ -11,13 +11,27 @@ android {
         applicationId = "br.com.nexumcell.trava"
         minSdk = 26          // Android 8.0+
         targetSdk = 34
-        versionCode = 2
+        versionCode = (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0) + 2
         versionName = "1.1"
+    }
+
+    // Assinatura: o GitHub Actions passa a chave pelos secrets (nunca fica no repositório)
+    val keystoreFile = System.getenv("KEYSTORE_FILE")
+    signingConfigs {
+        create("release") {
+            if (keystoreFile != null) {
+                storeFile = file(keystoreFile)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (keystoreFile != null) signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
