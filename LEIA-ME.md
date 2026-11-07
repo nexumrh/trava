@@ -27,7 +27,7 @@ Tudo funciona no **plano grátis (Spark)** do Firebase, sem Cloud Functions, e o
    2. **Biometria facial**: só câmera ao vivo. A IA confere se é um rosto real (não foto de tela/papel) e se bate com o documento. Fica guardada só para Dono e Financeiro.
    3. **Contato**: 2 telefones do cliente — não podem ser iguais, nem de alguém da equipe, nem de outro cliente. Endereço por CEP.
    4. **Análise**: o vendedor fica vendo uma bolinha carregando **ao vivo**. O Dono aprova ou reprova no Painel do Dono → aparece na tela do vendedor **“Parabéns, você foi aprovado! Vamos escolher o aparelho”** ou **“Este cliente é inelegível para uma proposta de crédito no momento.”**
-   5. **Aparelho**: Samsung, Motorola, Realme, Redmi, Oppo, Honor, Infinix → modelo → memória. **Preço vem do catálogo do Dono e não pode ser alterado.** Entrada mínima de **30%**.
+   5. **Aparelho**: Samsung, Motorola, Realme, Redmi, Oppo, Honor, Infinix → modelo → memória. As linhas Android dessas marcas já vêm cadastradas; o Dono só **libera** em *Aparelhos à venda* os que a loja tem e coloca o valor. **O vendedor não altera o valor.** Entrada mínima de **30%**.
    6. **Contrato** com assinatura na tela.
    7. **Entrada**: o aparelho só sai da loja depois de registrar a entrada recebida.
    8. **Trava**: vídeo/passo a passo de instalação da marca + QR code; a tela mostra ao vivo quando a trava foi instalada.
