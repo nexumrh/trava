@@ -27,21 +27,34 @@ jobs:
         id: chave
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        run: |
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/nexumcell.jks"
-            echo "KEYSTORE_FILE=$RUNNER_TEMP/nexumcell.jks" >> $GITHUB_ENV
-            echo "assinado=sim" >> $GITHUB_OUTPUT
-          else
-            echo "assinado=nao" >> $GITHUB_OUTPUT
-            echo "::warning::Sem a chave (secret KEYSTORE_BASE64): só testa a compilação, sem publicar o APK."
-          fi
-
-      - name: Compilar
-        env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "assinado=nao" >> $GITHUB_OUTPUT
+            echo "::warning::Sem a chave (secret KEYSTORE_BASE64): só testa a compilação, sem publicar o APK."
+            exit 0
+          fi
+          # tira espaços e quebras de linha que vêm junto ao colar
+          limpa() { printf '%s' "$1" | tr -d ' \t\r\n'; }
+          SP=$(limpa "$KEYSTORE_PASSWORD"); KA=$(limpa "$KEY_ALIAS"); KP=$(limpa "$KEY_PASSWORD")
+          echo "::add-mask::$SP"; echo "::add-mask::$KP"
+          printf '%s' "$KEYSTORE_BASE64" | tr -d ' \t\r\n' | base64 -d > "$RUNNER_TEMP/nexumcell.jks" || { echo "::error::KEYSTORE_BASE64 inválido: cole de novo TODO o conteúdo do KEYSTORE_BASE64.txt"; exit 1; }
+          echo "Tamanho da chave: $(stat -c%s "$RUNNER_TEMP/nexumcell.jks") bytes (o certo é 2718)"
+          if ! keytool -list -keystore "$RUNNER_TEMP/nexumcell.jks" -storepass "$SP" >/dev/null 2>&1; then
+            if [ "$(stat -c%s "$RUNNER_TEMP/nexumcell.jks")" != "2718" ]; then
+              echo "::error::O segredo KEYSTORE_BASE64 está incompleto ou errado. Apague e cole de novo TODO o conteúdo do arquivo KEYSTORE_BASE64.txt."
+            else
+              echo "::error::A senha do segredo KEYSTORE_PASSWORD está errada. Apague e crie de novo copiando a senha do SECRETS-GITHUB.txt."
+            fi
+            exit 1
+          fi
+          keytool -list -keystore "$RUNNER_TEMP/nexumcell.jks" -storepass "$SP" -alias "$KA" >/dev/null 2>&1 || { echo "::error::O segredo KEY_ALIAS está errado (o certo é: nexumcell)."; exit 1; }
+          { echo "KEYSTORE_FILE=$RUNNER_TEMP/nexumcell.jks"; echo "KEYSTORE_PASSWORD=$SP"; echo "KEY_ALIAS=$KA"; echo "KEY_PASSWORD=$KP"; } >> $GITHUB_ENV
+          echo "assinado=sim" >> $GITHUB_OUTPUT
+
+      - name: Compilar
         run: |
           if [ "${{ steps.chave.outputs.assinado }}" = "sim" ]; then
             gradle --no-daemon assembleRelease
