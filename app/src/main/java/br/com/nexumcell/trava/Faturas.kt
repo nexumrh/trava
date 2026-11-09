@@ -169,6 +169,20 @@ object Faturas {
         alvo.removeAllViews()
         val dp = a.resources.displayMetrics.density
         val num = d.optLong("vendaNumero")
+        // Score NexumCell: o cliente vê a nota subir pagando em dia
+        d.optJSONObject("score")?.let { sc ->
+            val prox = sc.optJSONObject("proxima")
+            alvo.addView(LinearLayout(a).apply {
+                orientation = LinearLayout.VERTICAL; setBackgroundResource(R.drawable.card_claro)
+                setPadding((16 * dp).toInt(), (14 * dp).toInt(), (16 * dp).toInt(), (14 * dp).toInt())
+                layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = (12 * dp).toInt() }
+                addView(TextView(a).apply { text = I18n.t("Seu score NexumCell"); textSize = 13f; setTextColor(Color.parseColor("#696784")) })
+                addView(TextView(a).apply { text = "${sc.optInt("valor")}  ·  ${sc.optString("faixa")}"; textSize = 24f; setTypeface(typeface, android.graphics.Typeface.BOLD); setTextColor(Color.parseColor("#1F5FE8")) })
+                addView(android.widget.ProgressBar(a, null, android.R.attr.progressBarStyleHorizontal).apply { max = 1000; progress = sc.optInt("valor"); layoutParams = LinearLayout.LayoutParams(-1, (10 * dp).toInt()).apply { topMargin = (6 * dp).toInt() } })
+                addView(TextView(a).apply { textSize = 13f; setTextColor(Color.parseColor("#14203D")); setPadding(0, (6 * dp).toInt(), 0, 0)
+                    text = if (prox != null) "${I18n.t("Faltam")} ${prox.optInt("falta")} ${I18n.t("pontos para")} ${prox.optString("faixa")}. ${I18n.t("Pague em dia para subir e ganhar limite maior.")}" else I18n.t("Nível máximo! Você tem as melhores condições.") })
+            })
+        }
         for (f in lista(d)) {
             val card = LinearLayout(a).apply {
                 orientation = LinearLayout.VERTICAL

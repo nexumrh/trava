@@ -143,8 +143,23 @@ object Sync {
         "liberadoCodigoAte" to Store(ctx).liberadoLocalAte,
         "protecoes" to Policy.protecoesAtivas,
         "modelo" to "${Build.MANUFACTURER} ${Build.MODEL}",
+        "saude" to saude(ctx),
         "android" to Build.VERSION.RELEASE
     )
+
+    /** Saúde do aparelho: armazenamento, bateria, root e depuração (ajuda na avaliação da retomada e contra fraude). */
+    private fun saude(ctx: Context): Map<String, Any?> = try {
+        val sf = android.os.StatFs(android.os.Environment.getDataDirectory().path)
+        val bat = ctx.registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
+        val saudeBat = when (bat?.getIntExtra(android.os.BatteryManager.EXTRA_HEALTH, 0)) { 2 -> "boa"; 3 -> "superaquecida"; 4 -> "ruim"; 5 -> "sobretensão"; 7 -> "fria"; else -> "desconhecida" }
+        val root = listOf("/system/bin/su", "/system/xbin/su", "/sbin/su", "/su/bin/su", "/system/app/Superuser.apk", "/data/adb/magisk").any { java.io.File(it).exists() } || (Build.TAGS?.contains("test-keys") == true)
+        val dev = try { android.provider.Settings.Global.getInt(ctx.contentResolver, android.provider.Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) == 1 } catch (e: Exception) { false }
+        mapOf(
+            "armLivreGb" to Math.round(sf.availableBytes / 1e8) / 10.0, "armTotalGb" to Math.round(sf.totalBytes / 1e8) / 10.0,
+            "bateriaSaude" to saudeBat, "temperatura" to ((bat?.getIntExtra(android.os.BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0) / 10.0),
+            "carregando" to ((bat?.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0) ?: 0) > 0),
+            "ligadoHa" to android.os.SystemClock.elapsedRealtime() / 3_600_000L, "root" to root, "modoDesenvolvedor" to dev)
+    } catch (e: Throwable) { mapOf("erro" to (e.message ?: "")) }
 
     @Suppress("MissingPermission")
     private fun imei(ctx: Context, slot: Int): String = try {
