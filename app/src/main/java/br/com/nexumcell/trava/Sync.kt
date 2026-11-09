@@ -119,7 +119,10 @@ object Sync {
         val bruto = ids.joinToString("|").ifEmpty { tm?.simOperator.orEmpty() }
         val id = if (bruto.isEmpty()) "" else java.security.MessageDigest.getInstance("SHA-256").digest(bruto.toByteArray())
             .joinToString("") { "%02x".format(it) }.take(16)
-        mapOf("id" to id, "operadora" to operadora, "qtd" to subs.size)
+        // país do chip e da rede onde o celular está agora (br, py, ar…) — para o alerta de aparelho fora do país
+        val paisChip = (try { tm?.simCountryIso } catch (e: Throwable) { null }).orEmpty().lowercase()
+        val paisRede = (try { tm?.networkCountryIso } catch (e: Throwable) { null }).orEmpty().lowercase()
+        mapOf("id" to id, "operadora" to operadora, "qtd" to subs.size, "paisChip" to paisChip, "paisRede" to paisRede)
     } catch (e: Throwable) { mapOf("id" to "", "operadora" to "", "qtd" to 0) }
 
     private fun checkin(ctx: Context, r: Resultado): Map<String, Any?> = mapOf(

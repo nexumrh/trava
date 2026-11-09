@@ -38,6 +38,7 @@ object I18n {
         "Liberar" to "Liberar",
         "Liberar por 24 horas?" to "¿Liberar por 24 horas?",
         "Tenho um código da loja" to "Tengo un código de la tienda",
+        "Cartão de crédito ou boleto" to "Tarjeta de crédito o boleto",
         "Código da loja" to "Código de la tienda",
         "Digite o código de 6 números que a loja passou. Funciona mesmo sem internet." to "Escriba el código de 6 números que le dio la tienda. Funciona incluso sin internet.",
         "Aparelho liberado pela loja." to "Equipo liberado por la tienda.",

@@ -55,6 +55,12 @@ object Faturas {
 
     private fun r2(x: Double) = Math.round(x * 100) / 100.0
 
+    fun linkParcela(d: JSONObject, n: Int): String {
+        val arr = d.optJSONArray("parcelas") ?: return ""
+        for (i in 0 until arr.length()) { val p = arr.optJSONObject(i) ?: continue; if (p.optInt("n") == n) return p.optString("asaasLink") }
+        return ""
+    }
+
     /**
      * Quitação antecipada (CDC art. 52, §2º): parcelas ainda não vencidas são cobradas só pela parte do valor
      * financiado, sem os juros. Vencidas entram com multa e juros. Retorna (valor para quitar, economia) ou null.
@@ -191,6 +197,13 @@ object Faturas {
                 text = I18n.t("Pagar com PIX"); isAllCaps = false; setTextColor(Color.WHITE); setBackgroundResource(R.drawable.btn_azul)
                 layoutParams = LinearLayout.LayoutParams(-1, (46 * dp).toInt()).apply { topMargin = (10 * dp).toInt() }
                 setOnClickListener { mostrarPix(a, d, f.aPagar, "Parcela ${f.n}/${f.total} · vencimento ${f.venc.format(fmt)}", "NXC${num}P${f.n}", f.n) }
+            })
+            // cartão de crédito ou boleto: página de pagamento do Asaas da parcela
+            val link = linkParcela(d, f.n)
+            if (!f.pago && link.startsWith("https://")) card.addView(Button(a).apply {
+                text = I18n.t("Cartão de crédito ou boleto"); isAllCaps = false; setTextColor(Color.parseColor("#1F5FE8")); setBackgroundResource(R.drawable.btn_outline_azul)
+                layoutParams = LinearLayout.LayoutParams(-1, (44 * dp).toInt()).apply { topMargin = (8 * dp).toInt() }
+                setOnClickListener { try { a.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(link))) } catch (e: Exception) { } }
             })
             alvo.addView(card)
         }
