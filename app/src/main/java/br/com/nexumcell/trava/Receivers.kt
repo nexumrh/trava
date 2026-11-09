@@ -40,6 +40,20 @@ class AdminReceiver : DeviceAdminReceiver() {
     override fun onEnabled(context: Context, intent: Intent) {
         Setup.concluir(context, intent.adminExtras())
     }
+
+    /** Instalação por link: avisa antes de o cliente desativar o administrador. */
+    override fun onDisableRequested(context: Context, intent: Intent): CharSequence =
+        "Atenção: se você desativar, o aparelho será BLOQUEADO na hora e a loja será avisada. O contrato continua valendo."
+
+    override fun onDisabled(context: Context, intent: Intent) {
+        try {
+            val st = Store(context)
+            if (st.finalizado || Policy.isOwner(context) || !st.modoLink || st.linkAtivadoEm == 0L) return
+            st.adminRemovidoEm = System.currentTimeMillis()
+            Policy.travar(context, "A proteção do aparelho foi desativada. Abra o app NexumCell e ative de novo, ou procure a loja.")
+            Agendador.agora(context)
+        } catch (e: Throwable) { Log.e("NexumSetup", "onDisabled", e) }
+    }
 }
 
 /** Android 10+: o assistente de configuração pergunta qual modo usar → aparelho totalmente gerenciado. */

@@ -24,6 +24,17 @@ class Store(ctx: Context) {
         get() = s("projectId")
         set(v) { ps("projectId", v) }
 
+    // Instalado por link (sem QR): administrador comum + sobreposição, proteção reduzida
+    var modoLink: Boolean
+        get() = p.getBoolean("modoLink", false)
+        set(v) { p.edit().putBoolean("modoLink", v).commit() }
+    var linkAtivadoEm: Long
+        get() = l("linkAtivadoEm")
+        set(v) { pl("linkAtivadoEm", v) }
+    var adminRemovidoEm: Long
+        get() = l("adminRemovidoEm")
+        set(v) { pl("adminRemovidoEm", v) }
+
     // Autenticação anônima no Firebase
     var idToken: String
         get() = s("idToken")

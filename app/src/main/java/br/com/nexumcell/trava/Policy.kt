@@ -31,6 +31,12 @@ object Policy {
     fun admin(ctx: Context) = ComponentName(ctx, AdminReceiver::class.java)
     fun isOwner(ctx: Context): Boolean = try { dpm(ctx).isDeviceOwnerApp(ctx.packageName) } catch (e: Exception) { false }
 
+    fun adminAtivo(ctx: Context): Boolean = try { dpm(ctx).isAdminActive(admin(ctx)) } catch (e: Exception) { false }
+    fun sobreposicao(ctx: Context): Boolean = Build.VERSION.SDK_INT < 23 || android.provider.Settings.canDrawOverlays(ctx)
+    /** Instalado por link: precisa do administrador comum ativo. */
+    fun linkOk(ctx: Context): Boolean = !isOwner(ctx) && Store(ctx).modoLink && adminAtivo(ctx)
+    fun modo(ctx: Context): String = if (isOwner(ctx)) "qr" else if (Store(ctx).modoLink) "link" else "nenhum"
+
     private inline fun tenta(nome: String, f: () -> Unit) {
         try { f() } catch (e: Throwable) { Log.w(TAG, "$nome: ${e.message}") }
     }
@@ -230,7 +236,9 @@ object Policy {
         aplicarFrp(ctx, contas)
         protecoes(ctx, d)
         parcial(ctx, r.nivel == 2, d)
-        if (r.travar) travar(ctx, r.motivo) else liberar(ctx)
+        // instalado por link e o cliente desativou o administrador: bloqueia até a loja reativar
+        val semAdmin = !isOwner(ctx) && Store(ctx).modoLink && Store(ctx).linkAtivadoEm > 0 && !adminAtivo(ctx)
+        if (r.travar || semAdmin) travar(ctx, if (semAdmin && !r.travar) "A proteção do aparelho foi desativada. Abra o app NexumCell e ative de novo, ou procure a loja." else r.motivo) else liberar(ctx)
         try { Notificador.estado(ctx, r, d) } catch (e: Exception) { }
     }
 }

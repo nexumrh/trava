@@ -84,6 +84,17 @@ class LockActivity : Activity() {
         h.removeCallbacks(vigia)
     }
 
+    // Instalado por link (sem modo quiosque): se o cliente sair da tela, ela volta.
+    private val voltar = Runnable { if (Store(this).travado && !Policy.isOwner(this)) Policy.abrirTela(this) }
+    override fun onStop() {
+        super.onStop()
+        if (Store(this).travado && !Policy.isOwner(this)) { h.removeCallbacks(voltar); h.postDelayed(voltar, 400) }
+    }
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (Store(this).travado && !Policy.isOwner(this)) { h.removeCallbacks(voltar); h.postDelayed(voltar, 400) }
+    }
+
     @Deprecated("Bloqueado de propósito")
     override fun onBackPressed() { /* não sai da tela de bloqueio */ }
 

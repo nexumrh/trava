@@ -72,7 +72,7 @@ object Sync {
         val roubo = d.optJSONObject("roubo")
         val localizar = roubo != null && roubo.optLong("liberadoEm", 0L) == 0L && roubo.optBoolean("localizar")
         localCache = if (localizar) Localizador.obter(ctx) else null
-        val estado = "${r.travar}|${r.final}|$imeiConfere|${r.nivel}|${chip["id"]}|${st.pushToken.take(12)}|${st.liberadoLocalAte}"
+        val estado = "${r.travar}|${r.final}|$imeiConfere|${r.nivel}|${chip["id"]}|${st.pushToken.take(12)}|${st.liberadoLocalAte}|${Policy.adminAtivo(ctx)}"
         if (online && (localizar || estado != st.ultimoEstado || agora - st.ultimoCheckin > CHECKIN_MS)) {
             try {
                 Api(ctx).enviarCheckin(checkin(ctx, r))
@@ -135,6 +135,9 @@ object Sync {
         "motivo" to r.motivo,
         "finalizado" to r.final,
         "deviceOwner" to Policy.isOwner(ctx),
+        "modo" to Policy.modo(ctx),
+        "adminAtivo" to Policy.adminAtivo(ctx),
+        "sobreposicao" to Policy.sobreposicao(ctx),
         "imeiConfere" to imeiConfereCache,
         "chip" to chipCache,
         "local" to localCache,
