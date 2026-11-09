@@ -34,13 +34,56 @@ class MainActivity : Activity() {
     private fun lerLink(i: Intent?) {
         val u = i?.data ?: return
         if (u.scheme != "nexumcell" || u.host != "ativar") return
+        aplicarLink(u)
+    }
+
+    /** Aceita nexumcell://ativar?t=..&k=..&p=.. ou o link da página (…?instalar=TOKEN&k=..&p=..). */
+    private fun aplicarLink(u: Uri): Boolean {
         val st = Store(this)
-        if (Policy.isOwner(this)) return
-        val t = u.getQueryParameter("t").orEmpty(); val k = u.getQueryParameter("k").orEmpty(); val p = u.getQueryParameter("p").orEmpty()
-        if (t.length < 10 || k.isEmpty() || p.isEmpty()) return
+        if (Policy.isOwner(this)) return false
+        val t = (u.getQueryParameter("t") ?: u.getQueryParameter("instalar")).orEmpty().trim()
+        val k = u.getQueryParameter("k").orEmpty().trim(); val p = u.getQueryParameter("p").orEmpty().trim()
+        if (t.length < 10 || k.isEmpty() || p.isEmpty()) return false
         // não deixa trocar o contrato de um aparelho já ativado
-        if (st.token.isNotEmpty() && st.token != t && st.linkAtivadoEm > 0) return
+        if (st.token.isNotEmpty() && st.token != t && st.linkAtivadoEm > 0) return false
         st.token = t; st.apiKey = k; st.projectId = p; st.modoLink = true
+        return true
+    }
+
+    private fun usarTexto(txt: String?) {
+        val ok = try { !txt.isNullOrBlank() && aplicarLink(Uri.parse(txt.trim())) } catch (e: Exception) { false }
+        android.widget.Toast.makeText(this, if (ok) "Contrato encontrado! Agora ative a proteção." else "Este QR não é o da instalação NexumCell. Leia o QR da tela do vendedor.", android.widget.Toast.LENGTH_LONG).show()
+        if (ok) { mostrar(); atualizar() }
+    }
+
+    /** Leitor de QR do Google (não precisa de permissão de câmera). */
+    private fun lerQr() {
+        try {
+            val op = com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions.Builder()
+                .setBarcodeFormats(com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE).build()
+            com.google.mlkit.vision.codescanner.GmsBarcodeScanning.getClient(this, op).startScan()
+                .addOnSuccessListener { b -> usarTexto(b.rawValue) }
+                .addOnFailureListener { android.widget.Toast.makeText(this, "Não foi possível abrir o leitor. Confira a internet ou use “Colar o link”.", android.widget.Toast.LENGTH_LONG).show() }
+        } catch (e: Throwable) {
+            android.widget.Toast.makeText(this, "Leitor indisponível neste aparelho. Use “Colar o link”.", android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun colarLink() {
+        val cm = getSystemService(android.content.ClipboardManager::class.java)
+        val atual = try { cm?.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString() } catch (e: Exception) { null }.orEmpty()
+        val campo = android.widget.EditText(this).apply { hint = "Cole aqui o link da instalação"; setText(if (atual.contains("instalar=") || atual.startsWith("nexumcell:")) atual else "") }
+        android.app.AlertDialog.Builder(this).setTitle("Link da instalação").setView(campo)
+            .setPositiveButton("Usar") { _, _ -> usarTexto(campo.text.toString()) }.setNegativeButton("Cancelar", null).show()
+    }
+
+    private fun botao(lista: LinearLayout, t: String, acao: () -> Unit) {
+        lista.addView(Button(this).apply {
+            text = t; isAllCaps = false; setTextColor(android.graphics.Color.parseColor("#0A1733"))
+            setBackgroundResource(R.drawable.btn_outline_claro)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 16 }
+            setOnClickListener { try { acao() } catch (e: Exception) { } }
+        })
     }
 
     private fun bateriaLivre(): Boolean = Build.VERSION.SDK_INT < 23 ||
@@ -71,14 +114,7 @@ class MainActivity : Activity() {
         tv.text = if (st.linkAtivadoEm > 0) "A proteção do aparelho foi desativada e o aparelho está bloqueado. Toque nos botões abaixo para ativar de novo."
             else "Instalação pelo link da loja. Toque em cada botão abaixo, na ordem, e aceite a permissão. Depois volte para este app."
         lista.removeAllViews()
-        passos.forEach { (t, acao) ->
-            lista.addView(Button(this).apply {
-                text = t; isAllCaps = false; setTextColor(android.graphics.Color.parseColor("#0A1733"))
-                setBackgroundResource(R.drawable.btn_outline_claro)
-                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 16 }
-                setOnClickListener { try { acao() } catch (e: Exception) { } }
-            })
-        }
+        passos.forEach { (t, acao) -> botao(lista, t, acao) }
         return true
     }
 
@@ -112,8 +148,11 @@ class MainActivity : Activity() {
         if (!Policy.isOwner(this)) {
             if (!st.modoLink || !st.configurado) {
                 sit.text = "App não ativado"
-                tv.text = "Este aplicativo precisa ser ativado pela loja: pelo QR code na primeira tela do aparelho, ou pelo link de instalação que a loja envia (abra o link no navegador e toque em “Ativar”)."
-                lista.removeAllViews(); return
+                tv.text = "Este aplicativo precisa ser ativado pela loja. Toque em “Ler QR code da loja” e aponte para o QR da instalação na tela do vendedor."
+                lista.removeAllViews()
+                botao(lista, "📷 Ler QR code da loja") { lerQr() }
+                botao(lista, "Colar o link da instalação") { colarLink() }
+                return
             }
             if (passosLink(sit, tv, lista)) return
         }

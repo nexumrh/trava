@@ -51,6 +51,8 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation("com.google.zxing:core:3.5.3")
+    // leitor de QR do Google (Play Services): ativa a instalação por link lendo o QR da tela do vendedor
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
     // aviso instantâneo (FCM) — iniciado à mão, sem google-services.json
     implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
     implementation("com.google.firebase:firebase-messaging")
