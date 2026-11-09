@@ -26,6 +26,10 @@ android {
                 keyAlias = System.getenv("KEY_ALIAS")
                 keyPassword = System.getenv("KEY_PASSWORD")
             }
+            // assinatura v1 (JAR) também: o instalador do QR de alguns aparelhos (Realme, Oppo…) só confere a v1
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
         }
     }
 
