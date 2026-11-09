@@ -40,10 +40,16 @@ class MainActivity : Activity() {
     /** Aceita nexumcell://ativar?t=..&k=..&p=.. ou o link da página (…?instalar=TOKEN&k=..&p=..). */
     private fun aplicarLink(u: Uri): Boolean {
         val st = Store(this)
-        if (Policy.isOwner(this)) return false
         val t = (u.getQueryParameter("t") ?: u.getQueryParameter("instalar")).orEmpty().trim()
         val k = u.getQueryParameter("k").orEmpty().trim(); val p = u.getQueryParameter("p").orEmpty().trim()
         if (t.length < 10 || k.isEmpty() || p.isEmpty()) return false
+        // instalado pelo computador (ADB): já é "dono do aparelho"; só falta o contrato (uma única vez)
+        if (Policy.isOwner(this)) {
+            if (st.configurado) return false
+            st.token = t; st.apiKey = k; st.projectId = p
+            Setup.concluir(applicationContext, null)
+            return true
+        }
         // não deixa trocar o contrato de um aparelho já ativado
         if (st.token.isNotEmpty() && st.token != t && st.linkAtivadoEm > 0) return false
         st.token = t; st.apiKey = k; st.projectId = p; st.modoLink = true
