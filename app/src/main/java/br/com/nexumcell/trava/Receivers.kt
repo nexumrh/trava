@@ -65,6 +65,14 @@ class PolicyComplianceActivity : Activity() {
     }
 }
 
+/** Mudança de chip/operadora: sincroniza na hora (para avisar o painel ou travar). */
+class ChipReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        if (Store(context).finalizado) return
+        Agendador.agora(context)
+    }
+}
+
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val st = Store(context)

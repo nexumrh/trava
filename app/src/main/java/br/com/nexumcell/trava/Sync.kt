@@ -43,7 +43,11 @@ object Sync {
         }
 
         val d = st.cache() ?: return online
-        var r = Decisao.avaliar(d, agora, st.ultimoSyncOk)
+        try { Push.configurar(ctx, d) } catch (e: Throwable) { }
+        if (online && !st.chaveEnviada) {
+            try { if (Api(ctx).enviarChave(st.segredo)) st.chaveEnviada = true } catch (e: Exception) { Log.w(TAG, "chave: ${e.message}") }
+        }
+        var r = Decisao.avaliar(d, agora, st.ultimoSyncOk, st.liberadoLocalAte)
 
         // Antifraude: o IMEI real deste aparelho precisa ser o mesmo do contrato
         val doAparelho = listOf(imei(ctx, 0), imei(ctx, 1)).filter { it.length == 15 }
@@ -56,12 +60,19 @@ object Sync {
 
         // Check-in só quando o estado muda ou a cada 3 h (economiza a cota grátis do Firestore).
         val chip = chipInfo(ctx)
-        chipCache = chip
+        // troca de chip: o painel avisa; se o Dono escolheu "travar", trava até a loja conferir
+        val chipAtual = chip["id"]?.toString().orEmpty()
+        if (chipAtual.isNotEmpty() && (st.chipBase.isEmpty() || chipAtual == d.optString("chipAceito"))) st.chipBase = chipAtual
+        val chipTrocado = chipAtual.isNotEmpty() && st.chipBase.isNotEmpty() && chipAtual != st.chipBase
+        chipCache = chip + mapOf("trocado" to chipTrocado)
+        if (chipTrocado && !r.final && !r.travar && st.liberadoLocalAte <= agora && d.optString("acaoTrocaChip", "avisar") == "travar") {
+            r = Resultado(true, "Chip trocado. Procure a loja para liberar o aparelho.")
+        }
         // roubo comunicado com autorização do cliente: manda a localização a cada sincronização
         val roubo = d.optJSONObject("roubo")
         val localizar = roubo != null && roubo.optLong("liberadoEm", 0L) == 0L && roubo.optBoolean("localizar")
         localCache = if (localizar) Localizador.obter(ctx) else null
-        val estado = "${r.travar}|${r.final}|$imeiConfere|${r.nivel}|${chip["id"]}"
+        val estado = "${r.travar}|${r.final}|$imeiConfere|${r.nivel}|${chip["id"]}|${st.pushToken.take(12)}|${st.liberadoLocalAte}"
         if (online && (localizar || estado != st.ultimoEstado || agora - st.ultimoCheckin > CHECKIN_MS)) {
             try {
                 Api(ctx).enviarCheckin(checkin(ctx, r))
@@ -125,6 +136,9 @@ object Sync {
         "chip" to chipCache,
         "local" to localCache,
         "versao" to BuildConfig.VERSION_NAME,
+        "push" to Store(ctx).pushToken,
+        "liberadoCodigoAte" to Store(ctx).liberadoLocalAte,
+        "protecoes" to Policy.protecoesAtivas,
         "modelo" to "${Build.MANUFACTURER} ${Build.MODEL}",
         "android" to Build.VERSION.RELEASE
     )

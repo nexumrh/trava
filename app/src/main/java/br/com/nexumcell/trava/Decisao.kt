@@ -14,7 +14,7 @@ data class Resultado(val travar: Boolean, val motivo: String, val final: Boolean
 object Decisao {
     private const val DIA = 86_400_000L
 
-    fun avaliar(d: JSONObject, agora: Long, ultimoSyncOk: Long): Resultado {
+    fun avaliar(d: JSONObject, agora: Long, ultimoSyncOk: Long, liberadoLocalAte: Long = 0L): Resultado {
         val status = d.optString("status")
         if (d.optBoolean("quitado") || status == "QUITADO") return Resultado(false, "Contrato quitado", true)
         if (status == "CANCELADO") return Resultado(false, "Contrato cancelado", true)
@@ -24,6 +24,9 @@ object Decisao {
         if (roubo != null && roubo.optLong("liberadoEm", 0L) == 0L) {
             return Resultado(true, "Aparelho com comunicação de ${roubo.optString("tipo", "roubo").lowercase()}. Se você encontrou este celular, entregue em uma loja ${d.optString("lojaNome", "NexumCell")}.")
         }
+
+        // código de liberação dado pela loja (funciona sem internet)
+        if (liberadoLocalAte > agora) return Resultado(false, "Liberado com código da loja")
 
         when (d.optString("modo")) {
             "TRAVAR" -> return Resultado(true, "Bloqueio solicitado pela loja")

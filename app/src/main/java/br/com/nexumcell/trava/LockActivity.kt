@@ -58,6 +58,7 @@ class LockActivity : Activity() {
             Faturas.mostrarPix(this, d, total, "${atrasadas.size} parcela(s) em atraso, com multa e juros", "NXC${d.optLong("vendaNumero")}AT")
         }
         findViewById<Button>(R.id.btnConfianca).setOnClickListener { pedirConfianca() }
+        findViewById<Button>(R.id.btnCodigo).setOnClickListener { pedirCodigo() }
         findViewById<View>(R.id.tvPix).setOnClickListener {
             val pix = Store(this).cache()?.optString("chavePix").orEmpty()
             if (pix.isNotEmpty()) {
@@ -112,6 +113,27 @@ class LockActivity : Activity() {
                         atualizarConfianca()
                     }
                 }.start()
+            }
+            .setNegativeButton(I18n.t("Cancelar"), null).show()
+    }
+
+    /** Código de 6 dígitos dado pela loja: libera sem internet. */
+    private fun pedirCodigo() {
+        val ed = android.widget.EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            filters = arrayOf(android.text.InputFilter.LengthFilter(6))
+            hint = "000000"; textSize = 24f; gravity = android.view.Gravity.CENTER
+        }
+        android.app.AlertDialog.Builder(this)
+            .setTitle(I18n.t("Código da loja"))
+            .setMessage(I18n.t("Digite o código de 6 números que a loja passou. Funciona mesmo sem internet."))
+            .setView(ed)
+            .setPositiveButton(I18n.t("Liberar")) { _, _ ->
+                val erro = Codigo.validar(this, ed.text.toString())
+                if (erro != null) { Toast.makeText(this, erro, Toast.LENGTH_LONG).show(); return@setPositiveButton }
+                Thread { Sync.executar(applicationContext); runOnUiThread {
+                    Toast.makeText(this, I18n.t("Aparelho liberado pela loja."), Toast.LENGTH_LONG).show()
+                    if (!Store(this).travado) sair() } }.start()
             }
             .setNegativeButton(I18n.t("Cancelar"), null).show()
     }

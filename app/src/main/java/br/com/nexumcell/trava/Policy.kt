@@ -174,6 +174,37 @@ object Policy {
         st.suspensos = instalados.joinToString(",")
     }
 
+    /**
+     * Proteções extras contra burlar a trava. Cada uma pode ser desligada pelo Dono no painel
+     * (campos bloquearAviao, bloquearVpn, bloquearFontes, bloquearUsb no documento do aparelho; padrão "sim").
+     */
+    @Volatile var protecoesAtivas: String = ""
+
+    private fun extras(d: JSONObject?): List<Pair<String, Boolean>> {
+        val on = { k: String -> d != null && d.optString(k, "sim") != "nao" }
+        val l = mutableListOf<Pair<String, Boolean>>()
+        if (Build.VERSION.SDK_INT >= 28) l.add(UserManager.DISALLOW_AIRPLANE_MODE to on("bloquearAviao"))
+        l.add(UserManager.DISALLOW_CONFIG_VPN to on("bloquearVpn"))
+        l.add(UserManager.DISALLOW_INSTALL_UNKNOWN_SOURCES to on("bloquearFontes"))
+        if (Build.VERSION.SDK_INT >= 29) l.add(UserManager.DISALLOW_INSTALL_UNKNOWN_SOURCES_GLOBALLY to on("bloquearFontes"))
+        l.add(UserManager.DISALLOW_USB_FILE_TRANSFER to on("bloquearUsb"))
+        return l
+    }
+
+    fun protecoes(ctx: Context, d: JSONObject?) {
+        if (!isOwner(ctx)) return
+        val dpm = dpm(ctx); val a = admin(ctx)
+        // não prende o cliente em modo avião: só bloqueia o botão quando o modo avião estiver desligado
+        val aviaoLigado = try { android.provider.Settings.Global.getInt(ctx.contentResolver, android.provider.Settings.Global.AIRPLANE_MODE_ON, 0) == 1 } catch (e: Exception) { false }
+        val ativas = mutableListOf<String>()
+        extras(d).forEach { (r, ligar) ->
+            val efetivo = ligar && !(r == UserManager.DISALLOW_AIRPLANE_MODE && aviaoLigado)
+            tenta("extra $r") { if (efetivo) dpm.addUserRestriction(a, r) else dpm.clearUserRestriction(a, r) }
+            if (efetivo) ativas.add(r.removePrefix("no_"))
+        }
+        protecoesAtivas = ativas.joinToString(",")
+    }
+
     /** Contrato quitado/cancelado: remove tudo e deixa de ser administrador. */
     fun removerTudo(ctx: Context) {
         val st = Store(ctx)
@@ -183,6 +214,7 @@ object Policy {
         if (isOwner(ctx)) {
             val dpm = dpm(ctx); val a = admin(ctx)
             RESTRICOES.forEach { r -> tenta("clear $r") { dpm.clearUserRestriction(a, r) } }
+            extras(null).forEach { (r, _) -> tenta("clear $r") { dpm.clearUserRestriction(a, r) } }
             st.frpAplicado = "x" // força a limpeza
             aplicarFrp(ctx, emptyList())
             tenta("lockTaskPackages") { dpm.setLockTaskPackages(a, arrayOf()) }
@@ -196,6 +228,7 @@ object Policy {
         if (r.final) { removerTudo(ctx); return }
         val contas = d.optString("frpContas").split(",", ";", " ", "\n").map { it.trim() }.filter { it.isNotEmpty() }
         aplicarFrp(ctx, contas)
+        protecoes(ctx, d)
         parcial(ctx, r.nivel == 2, d)
         if (r.travar) travar(ctx, r.motivo) else liberar(ctx)
         try { Notificador.estado(ctx, r, d) } catch (e: Exception) { }

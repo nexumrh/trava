@@ -88,6 +88,15 @@ class Api(ctx: Context) {
         if (code !in 200..299) throw IOException("Liberação recusada ($code): $txt")
     }
 
+    /** Guarda o segredo do código sem internet em chavesTrava/{token} (cria uma vez; só a equipe lê). */
+    fun enviarChave(segredo: String): Boolean {
+        val url = "https://firestore.googleapis.com/v1/projects/${st.projectId}/databases/(default)/documents/chavesTrava?documentId=${st.token}"
+        val body = JSONObject().put("fields", JSONObject().put("k", Fs.encode(segredo)).put("em", Fs.encode(System.currentTimeMillis())))
+        val (code, txt) = http("POST", url, body.toString(), idToken())
+        if (code in 200..299 || code == 409) return true
+        throw IOException("chave ($code): $txt")
+    }
+
     fun enviarCheckin(info: Map<String, Any?>) {
         val body = JSONObject().put("fields", JSONObject().put("checkin", Fs.encode(info)))
         val (code, txt) = http("PATCH", docUrl() + "?updateMask.fieldPaths=checkin", body.toString(), idToken())

@@ -56,7 +56,7 @@ class MainActivity : Activity() {
             tv.text = "Conecte o aparelho à internet para carregar o seu contrato."
             return
         }
-        val r = Decisao.avaliar(d, System.currentTimeMillis(), st.ultimoSyncOk)
+        val r = Decisao.avaliar(d, System.currentTimeMillis(), st.ultimoSyncOk, st.liberadoLocalAte)
         val fat = Faturas.lista(d)
         val abertas = fat.filter { !it.pago }
         val atrasadas = abertas.filter { it.diasAtraso > 0 }

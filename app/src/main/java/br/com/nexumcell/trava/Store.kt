@@ -70,6 +70,49 @@ class Store(ctx: Context) {
         get() = p.getString("suspensos", "") ?: ""
         set(v) { p.edit().putString("suspensos", v).apply() }
 
+    // Código de liberação sem internet: segredo só do aparelho (a loja lê pelo painel em chavesTrava/{token})
+    var segredo: String
+        get() {
+            var v = s("segredo")
+            if (v.isEmpty()) {
+                val b = ByteArray(32); java.security.SecureRandom().nextBytes(b)
+                v = b.joinToString("") { "%02x".format(it) }; ps("segredo", v)
+            }
+            return v
+        }
+        set(v) { ps("segredo", v) }
+    var chaveEnviada: Boolean
+        get() = p.getBoolean("chaveEnviada", false)
+        set(v) { p.edit().putBoolean("chaveEnviada", v).commit() }
+    var codigosUsados: String
+        get() = s("codigosUsados")
+        set(v) { ps("codigosUsados", v) }
+    var liberadoLocalAte: Long
+        get() = l("liberadoLocalAte")
+        set(v) { pl("liberadoLocalAte", v) }
+    var errosCodigo: Long
+        get() = l("errosCodigo")
+        set(v) { pl("errosCodigo", v) }
+    var codigoBloqueadoAte: Long
+        get() = l("codigoBloqueadoAte")
+        set(v) { pl("codigoBloqueadoAte", v) }
+
+    // Chip que estava no aparelho (para detectar troca)
+    var chipBase: String
+        get() = s("chipBase")
+        set(v) { ps("chipBase", v) }
+
+    // Notificação instantânea (Firebase Cloud Messaging)
+    var pushToken: String
+        get() = s("pushToken")
+        set(v) { ps("pushToken", v) }
+    var fcmAppId: String
+        get() = s("fcmAppId")
+        set(v) { ps("fcmAppId", v) }
+    var fcmSender: String
+        get() = s("fcmSender")
+        set(v) { ps("fcmSender", v) }
+
     var finalizado: Boolean
         get() = p.getBoolean("finalizado", false)
         set(v) { p.edit().putBoolean("finalizado", v).commit() }
