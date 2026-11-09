@@ -31,6 +31,9 @@ class Store(ctx: Context) {
     var linkAtivadoEm: Long
         get() = l("linkAtivadoEm")
         set(v) { pl("linkAtivadoEm", v) }
+    var autostartPedido: Boolean
+        get() = p.getBoolean("autostartPedido", false)
+        set(v) { p.edit().putBoolean("autostartPedido", v).commit() }
     var adminRemovidoEm: Long
         get() = l("adminRemovidoEm")
         set(v) { pl("adminRemovidoEm", v) }

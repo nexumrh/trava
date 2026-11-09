@@ -132,6 +132,8 @@ class MainActivity : Activity() {
         if (!bateriaLivre()) passos.add("3. Não economizar bateria neste app" to {
             try { startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName"))) } catch (e: Exception) { startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) }
         })
+        // Realme, Oppo, Xiaomi, Vivo, Huawei: precisa liberar "iniciar automaticamente" senão o sistema mata o app
+        if (Autostart.precisa() && !st.autostartPedido) passos.add("5. Permitir iniciar sozinho" to { st.autostartPedido = true; Autostart.abrir(this) })
         val faltaPerm = listOfNotNull(
             android.Manifest.permission.READ_PHONE_STATE,
             if (Build.VERSION.SDK_INT >= 33) android.Manifest.permission.POST_NOTIFICATIONS else null
@@ -141,8 +143,9 @@ class MainActivity : Activity() {
             if (st.linkAtivadoEm == 0L) { st.linkAtivadoEm = System.currentTimeMillis(); st.adminRemovidoEm = 0L; Setup.concluir(applicationContext, null) }
             return false
         }
-        sit.text = if (st.linkAtivadoEm > 0) "Proteção desativada" else "Ativar o NexumCell"
-        tv.text = if (st.linkAtivadoEm > 0) "A proteção do aparelho foi desativada e o aparelho está bloqueado. Toque nos botões abaixo para ativar de novo."
+        val desat = st.linkAtivadoEm > 0 && !Policy.adminAtivo(this)
+        sit.text = if (desat) "Proteção desativada" else "Ativar o NexumCell"
+        tv.text = if (desat) "A proteção do aparelho foi desativada e o aparelho está bloqueado. Toque nos botões abaixo para ativar de novo."
             else "Instalação pelo link da loja. Toque em cada botão abaixo, na ordem, e aceite a permissão. Depois volte para este app."
         lista.removeAllViews()
         passos.forEach { (t, acao) -> botao(lista, t, acao) }

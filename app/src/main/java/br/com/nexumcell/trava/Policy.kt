@@ -78,8 +78,11 @@ object Policy {
 
     fun travar(ctx: Context, motivo: String) {
         val st = Store(ctx)
+        val jaEstava = st.travado
         st.motivo = motivo
         st.travado = true
+        // sem Device Owner (link): apaga a tela na hora do bloqueio; ao acender, a tela de bloqueio já está por cima
+        if (!jaEstava && !isOwner(ctx) && adminAtivo(ctx)) tenta("lockNow") { dpm(ctx).lockNow() }
         if (isOwner(ctx)) {
             val dpm = dpm(ctx); val a = admin(ctx)
             tenta("lockTaskPackages") { dpm.setLockTaskPackages(a, pacotesPermitidos(ctx)) }
@@ -105,6 +108,7 @@ object Policy {
             tenta("statusBar") { dpm.setStatusBarDisabled(a, false) }
         }
         setHome(ctx, false)
+        TravaTela.esconder(ctx)
         // A LockActivity percebe travado=false em até 3 s e se fecha (stopLockTask).
     }
 
@@ -112,6 +116,8 @@ object Policy {
         tenta("abrirTela") {
             ctx.startActivity(Intent(ctx, LockActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
+        // Realme, Xiaomi, Oppo etc. bloqueiam abrir tela em segundo plano: a sobreposição garante o bloqueio
+        if (!isOwner(ctx)) TravaTela.mostrar(ctx)
     }
 
     private fun setHome(ctx: Context, on: Boolean) {

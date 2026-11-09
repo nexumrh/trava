@@ -71,6 +71,7 @@ class LockActivity : Activity() {
     override fun onResume() {
         super.onResume()
         if (!Store(this).travado) { sair(); return }
+        TravaTela.esconder(this)
         preencher(); I18n.traduzir(window.decorView)
         try {
             if (Policy.dpm(this).isLockTaskPermitted(packageName)) startLockTask()
@@ -88,7 +89,7 @@ class LockActivity : Activity() {
     private val voltar = Runnable { if (Store(this).travado && !Policy.isOwner(this)) Policy.abrirTela(this) }
     override fun onStop() {
         super.onStop()
-        if (Store(this).travado && !Policy.isOwner(this)) { h.removeCallbacks(voltar); h.postDelayed(voltar, 400) }
+        if (Store(this).travado && !Policy.isOwner(this)) { TravaTela.mostrar(this); h.removeCallbacks(voltar); h.postDelayed(voltar, 400) }
     }
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
