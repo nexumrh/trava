@@ -86,6 +86,21 @@ class MainActivity : Activity() {
         })
     }
 
+    /** Primeira abertura (instalação por link): pega o contrato copiado pela página ou abre o leitor de QR sozinho. */
+    private var tentouAuto = false
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (!hasFocus || tentouAuto || Policy.isOwner(this)) return
+        val st = Store(this); if (st.configurado || st.finalizado) return
+        tentouAuto = true
+        val clip = try { getSystemService(android.content.ClipboardManager::class.java)?.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString() } catch (e: Exception) { null }.orEmpty().trim()
+        if (clip.startsWith("nexumcell://ativar") || clip.contains("instalar=")) {
+            val ok = try { aplicarLink(Uri.parse(clip)) } catch (e: Exception) { false }
+            if (ok) { android.widget.Toast.makeText(this, "Contrato encontrado! Agora ative a proteção.", android.widget.Toast.LENGTH_LONG).show(); mostrar(); atualizar(); return }
+        }
+        lerQr()
+    }
+
     private fun bateriaLivre(): Boolean = Build.VERSION.SDK_INT < 23 ||
         (getSystemService(PowerManager::class.java)?.isIgnoringBatteryOptimizations(packageName) ?: true)
 
