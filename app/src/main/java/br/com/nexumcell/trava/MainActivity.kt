@@ -53,7 +53,7 @@ class MainActivity : Activity() {
     private fun usarTexto(txt: String?) {
         val ok = try { !txt.isNullOrBlank() && aplicarLink(Uri.parse(txt.trim())) } catch (e: Exception) { false }
         android.widget.Toast.makeText(this, if (ok) "Contrato encontrado! Agora ative a proteção." else "Este QR não é o da instalação NexumCell. Leia o QR da tela do vendedor.", android.widget.Toast.LENGTH_LONG).show()
-        if (ok) { mostrar(); atualizar(); pedirAdmin() }
+        if (ok) { mostrar(); atualizar() }
     }
 
     /** Leitor de QR do Google (não precisa de permissão de câmera). */
@@ -88,6 +88,9 @@ class MainActivity : Activity() {
 
     /** Primeira abertura (instalação por link): pega o contrato copiado pela página ou abre o leitor de QR sozinho. */
     private var tentouAuto = false
+    /** permissões já pedidas nesta abertura (se o cliente negar, fica o botão para tentar de novo) */
+    private val pedidos = mutableSetOf<String>()
+    private var ultimoPedido = 0L
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (!hasFocus || tentouAuto || Policy.isOwner(this)) return
@@ -96,7 +99,7 @@ class MainActivity : Activity() {
         val clip = try { getSystemService(android.content.ClipboardManager::class.java)?.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString() } catch (e: Exception) { null }.orEmpty().trim()
         if (clip.startsWith("nexumcell://ativar") || clip.contains("instalar=")) {
             val ok = try { aplicarLink(Uri.parse(clip)) } catch (e: Exception) { false }
-            if (ok) { android.widget.Toast.makeText(this, "Contrato encontrado! Agora ative a proteção.", android.widget.Toast.LENGTH_LONG).show(); mostrar(); atualizar(); pedirAdmin(); return }
+            if (ok) { android.widget.Toast.makeText(this, "Contrato encontrado! Agora ative a proteção.", android.widget.Toast.LENGTH_LONG).show(); mostrar(); atualizar(); return }
         }
         lerQr()
     }
@@ -129,8 +132,11 @@ class MainActivity : Activity() {
         if (!bateriaLivre()) passos.add("3. Não economizar bateria neste app" to {
             try { startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName"))) } catch (e: Exception) { startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) }
         })
-        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
-            passos.add("4. Permitir notificações" to { requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS, android.Manifest.permission.READ_PHONE_STATE), 7) })
+        val faltaPerm = listOfNotNull(
+            android.Manifest.permission.READ_PHONE_STATE,
+            if (Build.VERSION.SDK_INT >= 33) android.Manifest.permission.POST_NOTIFICATIONS else null
+        ).filter { checkSelfPermission(it) != android.content.pm.PackageManager.PERMISSION_GRANTED }
+        if (faltaPerm.isNotEmpty()) passos.add("4. Permitir notificações e telefone" to { requestPermissions(faltaPerm.toTypedArray(), 7) })
         if (passos.isEmpty()) {
             if (st.linkAtivadoEm == 0L) { st.linkAtivadoEm = System.currentTimeMillis(); st.adminRemovidoEm = 0L; Setup.concluir(applicationContext, null) }
             return false
@@ -140,6 +146,16 @@ class MainActivity : Activity() {
             else "Instalação pelo link da loja. Toque em cada botão abaixo, na ordem, e aceite a permissão. Depois volte para este app."
         lista.removeAllViews()
         passos.forEach { (t, acao) -> botao(lista, t, acao) }
+        // pede tudo em sequência, sozinho: ao voltar de cada tela de permissão, abre a próxima
+        passos.firstOrNull { it.first !in pedidos }?.let { (t, acao) ->
+            lista.postDelayed({
+                // só com o app na frente (não abre por cima de outra tela de permissão)
+                if (!isFinishing && hasWindowFocus() && t !in pedidos && System.currentTimeMillis() - ultimoPedido > 1500) {
+                    pedidos.add(t); ultimoPedido = System.currentTimeMillis()
+                    try { acao() } catch (e: Exception) { }
+                }
+            }, 700)
+        }
         return true
     }
 
