@@ -68,7 +68,8 @@ jobs:
         if: steps.chave.outputs.assinado == 'sim'
         id: sha
         run: |
-          HEX=$(keytool -printcert -jarfile nexumcell-trava.apk | grep -m1 'SHA256:' | sed 's/.*SHA256: //')
+          # APK assinado só com v2/v3 não aparece no -printcert -jarfile: lê o certificado direto da chave
+          HEX=$(keytool -list -v -keystore "$KEYSTORE_FILE" -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" | grep -m1 'SHA256:' | sed 's/.*SHA256: //' | tr -d ' ')
           B64=$(echo "$HEX" | tr -d ':' | xxd -r -p | base64 | tr '+/' '-_' | tr -d '=')
           echo "hex=$HEX" >> $GITHUB_OUTPUT
           echo "b64=$B64" >> $GITHUB_OUTPUT
