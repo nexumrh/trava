@@ -53,7 +53,7 @@ class MainActivity : Activity() {
     private fun usarTexto(txt: String?) {
         val ok = try { !txt.isNullOrBlank() && aplicarLink(Uri.parse(txt.trim())) } catch (e: Exception) { false }
         android.widget.Toast.makeText(this, if (ok) "Contrato encontrado! Agora ative a proteção." else "Este QR não é o da instalação NexumCell. Leia o QR da tela do vendedor.", android.widget.Toast.LENGTH_LONG).show()
-        if (ok) { mostrar(); atualizar() }
+        if (ok) { mostrar(); atualizar(); pedirAdmin() }
     }
 
     /** Leitor de QR do Google (não precisa de permissão de câmera). */
@@ -96,9 +96,19 @@ class MainActivity : Activity() {
         val clip = try { getSystemService(android.content.ClipboardManager::class.java)?.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString() } catch (e: Exception) { null }.orEmpty().trim()
         if (clip.startsWith("nexumcell://ativar") || clip.contains("instalar=")) {
             val ok = try { aplicarLink(Uri.parse(clip)) } catch (e: Exception) { false }
-            if (ok) { android.widget.Toast.makeText(this, "Contrato encontrado! Agora ative a proteção.", android.widget.Toast.LENGTH_LONG).show(); mostrar(); atualizar(); return }
+            if (ok) { android.widget.Toast.makeText(this, "Contrato encontrado! Agora ative a proteção.", android.widget.Toast.LENGTH_LONG).show(); mostrar(); atualizar(); pedirAdmin(); return }
         }
         lerQr()
+    }
+
+    /** Logo depois de achar o contrato, já abre o pedido de administrador (1º passo). */
+    private fun pedirAdmin() {
+        if (Policy.adminAtivo(this)) return
+        try {
+            startActivity(Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
+                .putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, Policy.admin(this))
+                .putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Necessário para o crediário NexumCell: bloqueia o aparelho em caso de atraso. Ao quitar, a proteção é removida."))
+        } catch (e: Exception) { }
     }
 
     private fun bateriaLivre(): Boolean = Build.VERSION.SDK_INT < 23 ||
