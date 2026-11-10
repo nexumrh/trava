@@ -58,6 +58,7 @@ class LockActivity : Activity() {
             Faturas.mostrarPix(this, d, total, "${atrasadas.size} parcela(s) em atraso, com multa e juros", "NXC${d.optLong("vendaNumero")}AT")
         }
         findViewById<Button>(R.id.btnConfianca).setOnClickListener { pedirConfianca() }
+        findViewById<Button>(R.id.btnPromessa).setOnClickListener { pedirPromessa() }
         findViewById<Button>(R.id.btnCodigo).setOnClickListener { pedirCodigo() }
         findViewById<View>(R.id.tvPix).setOnClickListener {
             val pix = Store(this).cache()?.optString("chavePix").orEmpty()
@@ -103,6 +104,56 @@ class LockActivity : Activity() {
         val st = Store(this); val d = st.cache()
         val ok = d != null && Decisao.podeConfianca(d) && st.motivo.contains("atraso")
         findViewById<Button>(R.id.btnConfianca).visibility = if (ok) View.VISIBLE else View.GONE
+        val podePromessa = d != null && d.optInt("promessaMaxDias", 0) > 0 && d.optJSONObject("promessaApp") == null && st.motivo.contains("atraso")
+        findViewById<Button>(R.id.btnPromessa).visibility = if (podePromessa) View.VISIBLE else View.GONE
+    }
+
+    /** O cliente escolhe o dia em que vai pagar; o servidor libera o aparelho até lá (uma vez por contrato). */
+    private fun pedirPromessa() {
+        val d = Store(this).cache() ?: return
+        val max = d.optInt("promessaMaxDias", 5).coerceIn(1, 10)
+        val fmt = java.time.format.DateTimeFormatter.ofPattern("EEEE, dd/MM", java.util.Locale("pt", "BR"))
+        val hoje = java.time.LocalDate.now()
+        val dias = (1..max).map { hoje.plusDays(it.toLong()) }
+        val atrasadas = Faturas.lista(d).filter { !it.pago && it.diasAtraso > 0 }
+        val total = Math.round(atrasadas.sumOf { it.aPagar } * 100) / 100.0
+        android.app.AlertDialog.Builder(this)
+            .setTitle(I18n.t("Até quando você vai pagar?") + " (R$ " + String.format(java.util.Locale("pt", "BR"), "%.2f", total) + ")")
+            .setItems(dias.map { it.format(fmt) }.toTypedArray()) { _, i -> confirmarPromessa(dias[i].toString(), dias[i].format(fmt)) }
+            .setNegativeButton(I18n.t("Cancelar"), null).show()
+    }
+
+    private fun confirmarPromessa(data: String, rotulo: String) {
+        android.app.AlertDialog.Builder(this)
+            .setTitle(I18n.t("Confirmar a promessa?"))
+            .setMessage(I18n.t("O celular fica liberado até") + " " + rotulo + ". " + I18n.t("Você só pode usar isso uma vez neste contrato. Se o pagamento não cair até essa data, o celular volta a ser bloqueado."))
+            .setPositiveButton(I18n.t("Confirmar")) { _, _ ->
+                val b = findViewById<Button>(R.id.btnPromessa); b.isEnabled = false
+                Thread {
+                    var msg: String
+                    try {
+                        val st = Store(this); val d = st.cache()
+                        val serv = d?.optString("servidor").orEmpty().ifEmpty { d?.optString("servidorPix").orEmpty() }.ifEmpty { "https://nexumcell-servidor.wevellenerrera21.workers.dev" }.trimEnd('/')
+                        val c = java.net.URL("$serv/api/cliente-app").openConnection() as java.net.HttpURLConnection
+                        c.requestMethod = "POST"; c.connectTimeout = 15000; c.readTimeout = 20000; c.doOutput = true
+                        c.setRequestProperty("Content-Type", "application/json")
+                        c.outputStream.use { it.write(org.json.JSONObject().put("acao", "promessa").put("token", st.token).put("data", data).toString().toByteArray()) }
+                        val code = c.responseCode
+                        val txt = (if (code in 200..299) c.inputStream else c.errorStream)?.bufferedReader()?.readText().orEmpty()
+                        val j = try { org.json.JSONObject(txt) } catch (e: Exception) { org.json.JSONObject() }
+                        if (code in 200..299) {
+                            d?.let { x -> x.put("liberadoAte", j.optLong("liberadoAte")); x.put("promessaApp", org.json.JSONObject().put("data", data)); st.cacheJson = x.toString() }
+                            Sync.executar(this); msg = I18n.t("Promessa registrada. O celular está liberado até") + " " + rotulo + "."
+                        } else msg = j.optString("erro").ifEmpty { I18n.t("Não foi possível agora. Tente de novo.") }
+                    } catch (e: Exception) { msg = I18n.t("Sem internet. Conecte e tente de novo.") }
+                    runOnUiThread {
+                        b.isEnabled = true
+                        Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                        if (!Store(this).travado) sair() else { atualizarConfianca(); preencher() }
+                    }
+                }.start()
+            }
+            .setNegativeButton(I18n.t("Cancelar"), null).show()
     }
 
     private fun pedirConfianca() {

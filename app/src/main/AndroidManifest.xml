@@ -123,6 +123,12 @@
             </intent-filter>
         </service>
 
+        <!-- Widget da tela inicial: próxima parcela -->
+        <receiver android:name=".WidgetParcela" android:exported="true" android:label="Minha parcela">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_parcela_info" />
+        </receiver>
+
         <!-- Troca de chip / operadora -->
         <receiver
             android:name=".ChipReceiver"

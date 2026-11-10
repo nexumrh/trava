@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">NexumCell</string>
     <string name="ja_paguei">Já paguei — verificar agora</string>
+    <string name="widget_desc">Próxima parcela do seu celular e botão para pagar</string>
 </resources>

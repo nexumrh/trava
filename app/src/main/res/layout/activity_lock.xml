@@ -43,6 +43,11 @@
             android:text="Liberar por 24 h (1 vez por mês)" android:textAllCaps="false"
             android:textColor="#FFFFFF" android:textSize="15sp"/>
 
+        <Button android:id="@+id/btnPromessa" android:layout_width="match_parent" android:layout_height="52dp"
+            android:layout_marginTop="10dp" android:background="@drawable/btn_outline" android:visibility="gone"
+            android:text="Prometer o pagamento (libera até o dia)" android:textAllCaps="false"
+            android:textColor="#FFFFFF" android:textSize="15sp"/>
+
         <Button android:id="@+id/btnCodigo" android:layout_width="match_parent" android:layout_height="52dp"
             android:layout_marginTop="10dp" android:background="@drawable/btn_outline"
             android:text="Tenho um código da loja" android:textAllCaps="false"

@@ -84,6 +84,7 @@ object Sync {
 
         try { Notificador.avisar(ctx, d) } catch (e: Exception) { Log.w(TAG, "avisos: ${e.message}") }
         try { Notificador.avisoLoja(ctx, d) } catch (e: Exception) { }
+        WidgetParcela.atualizar(ctx)
         if (online) Updater.verificar(ctx)
 
         // Pagamento confirmado: mostra "Parabéns, suas faturas estão em dia"
