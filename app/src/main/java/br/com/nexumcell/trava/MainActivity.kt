@@ -1,6 +1,7 @@
 package br.com.nexumcell.trava
 
 import android.app.Activity
+import android.view.View
 import android.app.admin.DevicePolicyManager
 import android.content.Intent
 import android.net.Uri
@@ -22,6 +23,9 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         findViewById<Button>(R.id.btnAtualizar).setOnClickListener { atualizar() }
+        findViewById<TextView>(R.id.abaFaturas).setOnClickListener { abrirAba(0) }
+        findViewById<TextView>(R.id.abaContrato).setOnClickListener { abrirAba(1) }
+        findViewById<TextView>(R.id.abaSuporte).setOnClickListener { abrirAba(2) }
         lerLink(intent)
     }
 
@@ -190,6 +194,7 @@ class MainActivity : Activity() {
         val tv = findViewById<TextView>(R.id.tvStatus)
         val lista = findViewById<LinearLayout>(R.id.listaFaturas)
         val rodape = findViewById<TextView>(R.id.tvRodape)
+        findViewById<View>(R.id.abas).visibility = View.GONE; abrirAba(0, false)
         if (st.finalizado) {
             sit.text = "Contrato quitado"
             tv.text = "Parabéns! Você pagou todas as parcelas. A trava foi removida e o aparelho é todo seu. Você já pode desinstalar este aplicativo."
@@ -242,6 +247,69 @@ class MainActivity : Activity() {
         rodape.text = buildString {
             if (loja.isNotEmpty()) append("Loja: $loja\n")
             if (st.ultimoSyncOk > 0) append("Atualizado em ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR")).format(Date(st.ultimoSyncOk))}")
+        }        findViewById<View>(R.id.abas).visibility = View.VISIBLE
+        preencherAbas(d)
+        abrirAba(abaAtual, false)
+    }
+
+    /* ---------- abas: Faturas · Contrato · Suporte ---------- */
+    private var abaAtual = 0
+    private fun abrirAba(i: Int, guardar: Boolean = true) {
+        if (guardar) abaAtual = i
+        val ids = listOf(R.id.secFaturas, R.id.secContrato, R.id.secSuporte)
+        val abas = listOf(R.id.abaFaturas, R.id.abaContrato, R.id.abaSuporte)
+        ids.forEachIndexed { k, id -> findViewById<View>(id).visibility = if (k == i) View.VISIBLE else View.GONE }
+        abas.forEachIndexed { k, id -> findViewById<TextView>(id).apply {
+            setTextColor(android.graphics.Color.parseColor(if (k == i) "#0A1733" else "#696784"))
+            setTypeface(null, if (k == i) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+            setBackgroundColor(android.graphics.Color.parseColor(if (k == i) "#EEF3FF" else "#FFFFFF"))
+        } }
+    }
+
+    private fun portal(d: org.json.JSONObject) = d.optString("portal").ifEmpty { "https://nexumrh.github.io/cliente/" }.let { if (it.endsWith("/") || it.contains("?") || it.endsWith(".html")) it else "$it/" }
+    private fun abrirUrl(u: String) { try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e: Exception) { android.widget.Toast.makeText(this, "Não foi possível abrir", android.widget.Toast.LENGTH_SHORT).show() } }
+    private fun whats(tel: String, msg: String) { val n = tel.filter { it.isDigit() }; if (n.length < 10) return; abrirUrl("https://wa.me/${if (n.startsWith("55")) n else "55$n"}?text=" + Uri.encode(msg)) }
+    private fun texto(t: String, tam: Float = 15f, cor: String = "#1B1A2E", negrito: Boolean = false) = TextView(this).apply {
+        text = t; textSize = tam; setTextColor(android.graphics.Color.parseColor(cor)); if (negrito) setTypeface(typeface, android.graphics.Typeface.BOLD); setPadding(0, 8, 0, 8); setLineSpacing(4f, 1f)
+    }
+    private fun botaoAba(alvo: LinearLayout, t: String, principal: Boolean = false, acao: () -> Unit) {
+        alvo.addView(Button(this).apply {
+            text = t; isAllCaps = false; setTextColor(android.graphics.Color.parseColor(if (principal) "#FFFFFF" else "#0A1733"))
+            if (principal) setBackgroundColor(android.graphics.Color.parseColor("#1D4ED8")) else setBackgroundResource(R.drawable.btn_outline_claro)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = 18 }
+            setOnClickListener { acao() }
+        })
+    }
+
+    private fun preencherAbas(d: org.json.JSONObject) {
+        val st = Store(this)
+        // Contrato
+        val c = findViewById<LinearLayout>(R.id.secContrato); c.removeAllViews()
+        c.addView(texto("Meu contrato", 17f, negrito = true))
+        c.addView(texto("Contrato nº ${d.optLong("vendaNumero")} · ${d.optString("marca")} ${d.optString("modelo")}\nLoja: ${d.optString("lojaNome")}\n${d.optJSONArray("parcelas")?.length() ?: 0} parcelas", 15f, "#3B3A52"))
+        c.addView(texto("O contrato foi assinado na compra. Você pode baixar uma cópia em PDF para guardar.", 14f, "#696784"))
+        botaoAba(c, "📄 Baixar contrato assinado (PDF)", true) { abrirUrl(portal(d) + "?contrato=" + Uri.encode(st.token)) }
+        botaoAba(c, "Ver recibos e quitação no portal") { abrirUrl(portal(d)) }
+        // Suporte
+        val s2 = findViewById<LinearLayout>(R.id.secSuporte); s2.removeAllViews()
+        s2.addView(texto("Suporte", 17f, negrito = true))
+        s2.addView(texto("Fale com a gente. Tenha em mãos o número do contrato: ${d.optLong("vendaNumero")}.", 14f, "#696784"))
+        val telLoja = d.optString("lojaTelefone"), telSup = d.optString("telefoneSuporte")
+        val msg = "Olá! Sou cliente NexumCell, contrato nº ${d.optLong("vendaNumero")} (${d.optString("marca")} ${d.optString("modelo")}). Preciso de ajuda."
+        if (telLoja.filter { it.isDigit() }.length >= 10) {
+            botaoAba(s2, "💬 Falar com a loja no WhatsApp", true) { whats(telLoja, msg) }
+            botaoAba(s2, "📞 Ligar para a loja") { abrirUrl("tel:" + telLoja.filter { it.isDigit() }) }
         }
+        if (telSup.filter { it.isDigit() }.length >= 10 && telSup.filter { it.isDigit() } != telLoja.filter { it.isDigit() })
+            botaoAba(s2, "🛟 Suporte NexumCell (WhatsApp)") { whats(telSup, msg) }
+        botaoAba(s2, "❓ Tirar dúvidas no portal do cliente") { abrirUrl(portal(d)) }
+        botaoAba(s2, "🚨 Meu celular foi roubado ou perdido") { abrirUrl(portal(d)) }
+        s2.addView(texto("Perguntas frequentes", 16f, negrito = true).apply { setPadding(0, 36, 0, 8) })
+        listOf(
+            "Paguei e o celular continua bloqueado. O que faço?" to "A liberação é automática em poucos minutos. Toque em Atualizar na aba Faturas. Se continuar, fale com a loja.",
+            "Posso pagar antes do vencimento?" to "Sim. Pagando antes você ganha desconto e, quitando tudo, economiza os juros das parcelas que ainda não venceram.",
+            "Como mudo o dia de vencimento?" to "Pelo portal do cliente, em Mudar dia do vencimento (uma vez por contrato).",
+            "Quando o app sai do celular?" to "Ao quitar o contrato, a proteção é removida automaticamente e você pode desinstalar."
+        ).forEach { (p, r) -> s2.addView(texto("• $p", 14f, "#1B1A2E", true)); s2.addView(texto(r, 14f, "#3B3A52")) }
     }
 }
