@@ -298,8 +298,9 @@ class MainActivity : Activity() {
         val telLoja = d.optString("lojaTelefone")
         val telSup = d.optString("telefoneSuporte")
         val msg = "Olá! Sou cliente NexumCell, contrato nº ${d.optLong("vendaNumero")} (${d.optString("marca")} ${d.optString("modelo")}). Preciso de ajuda."
+        botaoAba(s2, "🤖 Tirar dúvidas com a assistente (IA)", true) { startActivity(Intent(this, ChatActivity::class.java)) }
         if (telLoja.filter { it.isDigit() }.length >= 10) {
-            botaoAba(s2, "💬 Falar com a loja no WhatsApp", true) { whats(telLoja, msg) }
+            botaoAba(s2, "💬 Falar com a loja no WhatsApp") { whats(telLoja, msg) }
             botaoAba(s2, "📞 Ligar para a loja") { abrirUrl("tel:" + telLoja.filter { it.isDigit() }) }
         }
         if (telSup.filter { it.isDigit() }.length >= 10 && telSup.filter { it.isDigit() } != telLoja.filter { it.isDigit() })
