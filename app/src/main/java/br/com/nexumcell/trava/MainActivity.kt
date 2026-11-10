@@ -247,7 +247,8 @@ class MainActivity : Activity() {
         rodape.text = buildString {
             if (loja.isNotEmpty()) append("Loja: $loja\n")
             if (st.ultimoSyncOk > 0) append("Atualizado em ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR")).format(Date(st.ultimoSyncOk))}")
-        }        findViewById<View>(R.id.abas).visibility = View.VISIBLE
+        }
+        findViewById<View>(R.id.abas).visibility = View.VISIBLE
         preencherAbas(d)
         abrirAba(abaAtual, false)
     }
@@ -294,7 +295,8 @@ class MainActivity : Activity() {
         val s2 = findViewById<LinearLayout>(R.id.secSuporte); s2.removeAllViews()
         s2.addView(texto("Suporte", 17f, negrito = true))
         s2.addView(texto("Fale com a gente. Tenha em mãos o número do contrato: ${d.optLong("vendaNumero")}.", 14f, "#696784"))
-        val telLoja = d.optString("lojaTelefone"), telSup = d.optString("telefoneSuporte")
+        val telLoja = d.optString("lojaTelefone")
+        val telSup = d.optString("telefoneSuporte")
         val msg = "Olá! Sou cliente NexumCell, contrato nº ${d.optLong("vendaNumero")} (${d.optString("marca")} ${d.optString("modelo")}). Preciso de ajuda."
         if (telLoja.filter { it.isDigit() }.length >= 10) {
             botaoAba(s2, "💬 Falar com a loja no WhatsApp", true) { whats(telLoja, msg) }
