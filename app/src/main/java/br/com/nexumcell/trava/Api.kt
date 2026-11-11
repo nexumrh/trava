@@ -12,7 +12,7 @@ import java.net.URLEncoder
  * Comunicação com o Firebase pela API REST (sem SDK, sem google-services.json).
  * O aparelho entra com login anônimo e lê apenas o documento aparelhos/{token}.
  */
-class Api(ctx: Context) {
+class Api(private val ctx: Context) {
     private val st = Store(ctx)
 
     private fun http(method: String, url: String, body: String?, bearer: String?, contentType: String = "application/json"): Pair<Int, String> {
@@ -34,6 +34,7 @@ class Api(ctx: Context) {
                 c.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
             }
             val code = c.responseCode
+            try { if (c.date > 0L && (url.contains("googleapis.com"))) Relogio.servidor(ctx, c.date) } catch (e: Throwable) { }
             val stream = if (code in 200..299) c.inputStream else c.errorStream
             val txt = stream?.bufferedReader()?.use { it.readText() } ?: ""
             return code to txt

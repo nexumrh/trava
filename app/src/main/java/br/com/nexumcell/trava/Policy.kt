@@ -95,11 +95,13 @@ object Policy {
             }
             tenta("statusBar") { dpm.setStatusBarDisabled(a, true) }
         }
+        if (!jaEstava) GoogleLock.travar(ctx)
         abrirTela(ctx)
     }
 
     fun liberar(ctx: Context) {
         val st = Store(ctx)
+        if (st.travado) GoogleLock.liberar(ctx)
         st.travado = false
         st.motivo = ""
         if (isOwner(ctx)) {
@@ -233,6 +235,7 @@ object Policy {
             tenta("uninstallBlocked") { dpm.setUninstallBlocked(a, ctx.packageName, false) }
             tenta("clearOwner") { @Suppress("DEPRECATION") dpm.clearDeviceOwnerApp(ctx.packageName) }
         }
+        GoogleLock.encerrar(ctx)
         st.finalizado = true
     }
 
@@ -246,5 +249,6 @@ object Policy {
         val semAdmin = !isOwner(ctx) && Store(ctx).modoLink && Store(ctx).linkAtivadoEm > 0 && !adminAtivo(ctx)
         if (r.travar || semAdmin) travar(ctx, if (semAdmin && !r.travar) "A proteção do aparelho foi desativada. Abra o app NexumCell e ative de novo, ou procure a loja." else r.motivo) else liberar(ctx)
         try { Notificador.estado(ctx, r, d) } catch (e: Exception) { }
+        try { AvisoActivity.talvezAbrir(ctx, r, d) } catch (e: Exception) { }
     }
 }

@@ -42,7 +42,7 @@ object Decisao {
         if (confianca != null && confianca.optLong("ate", 0L) > agora) return Resultado(false, "Liberação de confiança (24 h)")
 
         val (avisoDias, parcialDias, totalDias) = etapas(d)
-        val hoje = LocalDate.now()
+        val hoje = java.time.Instant.ofEpochMilli(agora).atZone(java.time.ZoneId.systemDefault()).toLocalDate()   // hora confiável (Relogio)
         var atrasadas = 0
         var maior = 0L
         val parcelas = d.optJSONArray("parcelas")

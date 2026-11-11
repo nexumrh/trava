@@ -127,6 +127,20 @@ class Store(ctx: Context) {
         get() = s("fcmSender")
         set(v) { ps("fcmSender", v) }
 
+    // Relógio confiável (Relogio.kt) e aviso diário em tela cheia
+    var relogioMax: Long
+        get() = l("relogioMax")
+        set(v) { pl("relogioMax", v) }
+    var relogioDif: Long
+        get() = l("relogioDif")
+        set(v) { pl("relogioDif", v) }
+    var relogioVoltouEm: Long
+        get() = l("relogioVoltouEm")
+        set(v) { pl("relogioVoltouEm", v) }
+    var avisoTelaDia: String
+        get() = s("avisoTelaDia")
+        set(v) { ps("avisoTelaDia", v) }
+
     var finalizado: Boolean
         get() = p.getBoolean("finalizado", false)
         set(v) { p.edit().putBoolean("finalizado", v).commit() }
