@@ -43,6 +43,11 @@ object GoogleLock {
     /** Contrato quitado ou cancelado: devolve o aparelho de vez (o app perde o poder de travar). */
     fun encerrar(ctx: Context) {
         if (Build.VERSION.SDK_INT < 34) return
-        try { gerente(ctx)?.clearDeviceRestrictions(ctx.mainExecutor, receptor("clearDeviceRestrictions")!!) } catch (e: Throwable) { Log.w(TAG, "encerrar: ${e.message}") }
+        try {
+            // o método entrou na API pública depois do Android 14: chamado por nome para compilar com o SDK 34
+            val g = gerente(ctx) ?: return
+            g.javaClass.getMethod("clearDeviceRestrictions", java.util.concurrent.Executor::class.java, OutcomeReceiver::class.java)
+                .invoke(g, ctx.mainExecutor, receptor("clearDeviceRestrictions"))
+        } catch (e: Throwable) { Log.w(TAG, "encerrar: ${e.message}") }
     }
 }
