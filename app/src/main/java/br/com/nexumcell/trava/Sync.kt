@@ -149,6 +149,7 @@ object Sync {
         "protecoes" to Policy.protecoesAtivas,
         "relogio" to Relogio.info(ctx),
         "googleLock" to GoogleLock.status(ctx),
+        "instaladoPc" to Store(ctx).instaladoPc,
         "modelo" to "${Build.MANUFACTURER} ${Build.MODEL}",
         "saude" to saude(ctx),
         "android" to Build.VERSION.RELEASE

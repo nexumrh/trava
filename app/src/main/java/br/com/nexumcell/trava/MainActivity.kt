@@ -51,6 +51,7 @@ class MainActivity : Activity() {
         if (Policy.isOwner(this)) {
             if (st.configurado) return false
             st.token = t; st.apiKey = k; st.projectId = p
+            st.instaladoPc = u.getQueryParameter("pc").orEmpty().filter { it.isLetterOrDigit() || it == '-' || it == '_' }.take(40)
             Setup.concluir(applicationContext, null)
             return true
         }

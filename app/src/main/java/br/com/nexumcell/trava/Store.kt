@@ -137,6 +137,10 @@ class Store(ctx: Context) {
     var relogioVoltouEm: Long
         get() = l("relogioVoltouEm")
         set(v) { pl("relogioVoltouEm", v) }
+    /** Nome do computador que instalou a trava pelo cabo USB (vem no link de ativação). */
+    var instaladoPc: String
+        get() = s("instaladoPc")
+        set(v) { ps("instaladoPc", v) }
     var avisoTelaDia: String
         get() = s("avisoTelaDia")
         set(v) { ps("avisoTelaDia", v) }
