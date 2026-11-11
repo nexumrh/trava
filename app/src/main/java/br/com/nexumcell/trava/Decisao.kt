@@ -18,6 +18,8 @@ object Decisao {
         val status = d.optString("status")
         if (d.optBoolean("quitado") || status == "QUITADO") return Resultado(false, "Contrato quitado", true)
         if (status == "CANCELADO") return Resultado(false, "Contrato cancelado", true)
+        // a loja mandou remover a trava pelo painel (remoção remota, individual ou em massa)
+        if (d.optBoolean("removerRemoto")) return Resultado(false, "Remoção autorizada pela loja", true)
 
         // cliente comunicou roubo, furto ou perda pelo portal: trava até a loja liberar
         val roubo = d.optJSONObject("roubo")
