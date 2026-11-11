@@ -184,7 +184,7 @@ class LockActivity : Activity() {
     private fun pedirCodigo() {
         val ed = android.widget.EditText(this).apply {
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            filters = arrayOf(android.text.InputFilter.LengthFilter(6))
+            filters = arrayOf(android.text.InputFilter.LengthFilter(10))
             hint = "000000"; textSize = 24f; gravity = android.view.Gravity.CENTER
         }
         android.app.AlertDialog.Builder(this)
@@ -192,11 +192,31 @@ class LockActivity : Activity() {
             .setMessage(I18n.t("Digite o código de 6 números que a loja passou. Funciona mesmo sem internet."))
             .setView(ed)
             .setPositiveButton(I18n.t("Liberar")) { _, _ ->
-                val erro = Codigo.validar(this, ed.text.toString())
+                val txt = ed.text.toString().filter { it.isDigit() }
+                // código de 10 dígitos = remoção definitiva da trava (equipe)
+                if (txt.length == 10 && Remocao.confere(this, txt)) { confirmarRemocao(); return@setPositiveButton }
+                val erro = Codigo.validar(this, txt)
                 if (erro != null) { Toast.makeText(this, erro, Toast.LENGTH_LONG).show(); return@setPositiveButton }
                 Thread { Sync.executar(applicationContext); runOnUiThread {
                     Toast.makeText(this, I18n.t("Aparelho liberado pela loja."), Toast.LENGTH_LONG).show()
                     if (!Store(this).travado) sair() } }.start()
+            }
+            .setNegativeButton(I18n.t("Cancelar"), null).show()
+    }
+
+    /** Código de remoção válido: confirma e tira a trava da NexumCell deste aparelho. */
+    private fun confirmarRemocao() {
+        android.app.AlertDialog.Builder(this)
+            .setTitle(I18n.t("Remover a trava deste aparelho?"))
+            .setMessage(I18n.t("A proteção da NexumCell vai sair do aparelho e o app será desinstalado. Isso não pode ser desfeito. Use só quando a loja autorizar a remoção."))
+            .setPositiveButton(I18n.t("Remover a trava")) { _, _ ->
+                Thread {
+                    try { Remocao.executar(applicationContext) } catch (e: Exception) { }
+                    runOnUiThread {
+                        Toast.makeText(this, I18n.t("Trava removida. Pode desinstalar o app NexumCell."), Toast.LENGTH_LONG).show()
+                        finish()
+                    }
+                }.start()
             }
             .setNegativeButton(I18n.t("Cancelar"), null).show()
     }
