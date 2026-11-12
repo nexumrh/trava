@@ -71,6 +71,7 @@
         <!-- Tela do app (status do contrato) -->
         <activity android:name=".AvisoActivity" android:exported="false" android:excludeFromRecents="true" android:theme="@android:style/Theme.Material.NoActionBar" />
         <activity android:name=".ChatActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".SuporteActivity" android:exported="false" android:windowSoftInputMode="adjustResize" android:showWhenLocked="true" android:turnScreenOn="true" android:launchMode="singleTask" />
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTask"

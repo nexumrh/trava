@@ -114,6 +114,46 @@ class Api(private val ctx: Context) {
         val (code, txt) = http("PATCH", docUrl() + "?updateMask.fieldPaths=checkin", body.toString(), idToken())
         if (code !in 200..299) throw IOException("Erro no check-in ($code): $txt")
     }
+
+    private fun suporteBase() =
+        "https://firestore.googleapis.com/v1/projects/${st.projectId}/databases/(default)/documents/suporteApp"
+
+    /** Suporte dentro do app: grava a mensagem do cliente em suporteApp/{token}/msgs e atualiza o cabeçalho
+     *  (para o portal de suporte da NexumCell ver a conversa). Funciona mesmo com o aparelho bloqueado. */
+    fun enviarSuporteMsg(texto: String, bloqueado: Boolean, d: JSONObject?) {
+        val cab = JSONObject().put("fields", JSONObject()
+            .put("vendaNumero", Fs.encode(d?.optLong("vendaNumero") ?: 0L))
+            .put("clienteNome", Fs.encode(d?.optString("clienteNome") ?: ""))
+            .put("lojaNome", Fs.encode(d?.optString("lojaNome") ?: ""))
+            .put("marca", Fs.encode(d?.optString("marca") ?: ""))
+            .put("modelo", Fs.encode(d?.optString("modelo") ?: ""))
+            .put("bloqueado", Fs.encode(bloqueado))
+            .put("atualizadoEm", Fs.encode(System.currentTimeMillis()))
+            .put("naoLidoSuporte", Fs.encode(true)))
+        val mask = listOf("vendaNumero","clienteNome","lojaNome","marca","modelo","bloqueado","atualizadoEm","naoLidoSuporte")
+            .joinToString("&") { "updateMask.fieldPaths=$it" }
+        http("PATCH", "${suporteBase()}/${st.token}?$mask", cab.toString(), idToken())
+        val msg = JSONObject().put("fields", JSONObject()
+            .put("de", Fs.encode("cliente"))
+            .put("texto", Fs.encode(texto))
+            .put("em", Fs.encode(System.currentTimeMillis())))
+        val (code, txt) = http("POST", "${suporteBase()}/${st.token}/msgs", msg.toString(), idToken())
+        if (code !in 200..299) throw IOException("suporte ($code): $txt")
+    }
+
+    /** Lê a conversa de suporte (mensagens do cliente + respostas da NexumCell), em ordem. */
+    fun buscarSuporteMsgs(): List<JSONObject> {
+        val (code, txt) = http("GET", "${suporteBase()}/${st.token}/msgs?pageSize=100", null, idToken())
+        if (code !in 200..299) return emptyList()
+        val arr = JSONObject(txt).optJSONArray("documents") ?: return emptyList()
+        val out = ArrayList<JSONObject>()
+        for (i in 0 until arr.length()) {
+            val f = arr.getJSONObject(i).optJSONObject("fields") ?: continue
+            out.add(Fs.decodeFields(f))
+        }
+        out.sortBy { (it.opt("em") as? Long) ?: 0L }
+        return out
+    }
 }
 
 /** Conversão entre o formato tipado do Firestore REST e JSON comum. */

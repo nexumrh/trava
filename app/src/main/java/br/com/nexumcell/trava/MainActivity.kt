@@ -2,14 +2,19 @@ package br.com.nexumcell.trava
 
 import android.app.Activity
 import android.view.View
+import android.view.Gravity
 import android.app.admin.DevicePolicyManager
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import java.text.SimpleDateFormat
@@ -34,6 +39,27 @@ class MainActivity : Activity() {
         findViewById<View>(R.id.qaConfig).setOnClickListener { try { startActivity(Intent(Settings.ACTION_SETTINGS)) } catch (e: Exception) { } }
         findViewById<Button>(R.id.btnSelfie).setOnClickListener { tirarSelfie() }
         lerLink(intent)
+        botaoFlutuante()
+    }
+
+    private fun dpx(x: Int) = (x * resources.displayMetrics.density).toInt()
+
+    /** Portal flutuante de suporte: botão sempre visível que abre o Suporte NexumCell dentro do app. */
+    private fun botaoFlutuante() {
+        val fab = TextView(this).apply {
+            text = "💬  Suporte"; textSize = 15f; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD)
+            gravity = Gravity.CENTER; setPadding(dpx(20), dpx(14), dpx(20), dpx(14)); isClickable = true
+            background = GradientDrawable().apply { cornerRadius = dpx(28).toFloat(); setColor(Color.parseColor("#1D4ED8")) }
+            elevation = dpx(8).toFloat()
+            setOnClickListener { startActivity(Intent(this@MainActivity, SuporteActivity::class.java)) }
+        }
+        val lp = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
+            gravity = Gravity.BOTTOM or Gravity.END; marginEnd = dpx(16); bottomMargin = dpx(88)
+        }
+        addContentView(
+            FrameLayout(this).apply { addView(fab, lp) },
+            FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+        )
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -389,12 +415,9 @@ class MainActivity : Activity() {
         val s2 = findViewById<LinearLayout>(R.id.secSuporte); s2.removeAllViews()
         s2.addView(texto("Suporte", 17f, negrito = true))
         s2.addView(texto("Fale com a gente. Tenha em mãos o número do contrato: ${d.optLong("vendaNumero")}.", 14f, "#696784"))
-        // O cliente sempre fala com o Suporte NexumCell, nunca com a loja parceira.
-        val telSupDig = d.optString("telefoneSuporte").filter { it.isDigit() }
-        val telSup = if (telSupDig.length >= 10) telSupDig else "5545991187639" // WhatsApp central NexumCell
-        val msg = "Olá! Sou cliente NexumCell, contrato nº ${d.optLong("vendaNumero")} (${d.optString("marca")} ${d.optString("modelo")}). Preciso de ajuda."
-        botaoAba(s2, "🤖 Tirar dúvidas com a assistente (IA)", true) { startActivity(Intent(this, ChatActivity::class.java)) }
-        botaoAba(s2, "🛟 Falar com o Suporte NexumCell (WhatsApp)", true) { whats(telSup, msg) }
+        // O atendimento acontece DENTRO do app, com o Suporte NexumCell (não abre WhatsApp).
+        botaoAba(s2, "🛟 Falar com o Suporte NexumCell", true) { startActivity(Intent(this, SuporteActivity::class.java)) }
+        botaoAba(s2, "🤖 Tirar dúvidas com a assistente (IA)") { startActivity(Intent(this, ChatActivity::class.java)) }
         botaoAba(s2, "❓ Tirar dúvidas no portal do cliente") { abrirUrl(portal(d)) }
         botaoAba(s2, "🚨 Meu celular foi roubado ou perdido") { abrirUrl(portal(d)) }
         s2.addView(texto("Perguntas frequentes", 16f, negrito = true).apply { setPadding(0, 36, 0, 8) })
