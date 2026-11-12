@@ -20,6 +20,7 @@ object I18n {
         "Chamada de emergência (190 · 192 · 193)" to "Llamada de emergencia (190 · 192 · 193)",
         "Liberar por 24 h (1 vez por mês)" to "Liberar por 24 h (1 vez por mes)",
         "Ligar para a loja" to "Llamar a la tienda",
+        "Falar com o Suporte NexumCell" to "Hablar con el Soporte NexumCell",
         "Minhas faturas" to "Mis cuotas",
         "Pagar agora com PIX" to "Pagar ahora con PIX",
         "Já paguei — verificar agora" to "Ya pagué — verificar ahora",

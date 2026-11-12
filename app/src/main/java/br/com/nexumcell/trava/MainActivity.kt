@@ -389,21 +389,17 @@ class MainActivity : Activity() {
         val s2 = findViewById<LinearLayout>(R.id.secSuporte); s2.removeAllViews()
         s2.addView(texto("Suporte", 17f, negrito = true))
         s2.addView(texto("Fale com a gente. Tenha em mãos o número do contrato: ${d.optLong("vendaNumero")}.", 14f, "#696784"))
-        val telLoja = d.optString("lojaTelefone")
-        val telSup = d.optString("telefoneSuporte")
+        // O cliente sempre fala com o Suporte NexumCell, nunca com a loja parceira.
+        val telSupDig = d.optString("telefoneSuporte").filter { it.isDigit() }
+        val telSup = if (telSupDig.length >= 10) telSupDig else "5545991187639" // WhatsApp central NexumCell
         val msg = "Olá! Sou cliente NexumCell, contrato nº ${d.optLong("vendaNumero")} (${d.optString("marca")} ${d.optString("modelo")}). Preciso de ajuda."
         botaoAba(s2, "🤖 Tirar dúvidas com a assistente (IA)", true) { startActivity(Intent(this, ChatActivity::class.java)) }
-        if (telLoja.filter { it.isDigit() }.length >= 10) {
-            botaoAba(s2, "💬 Falar com a loja no WhatsApp") { whats(telLoja, msg) }
-            botaoAba(s2, "📞 Ligar para a loja") { abrirUrl("tel:" + telLoja.filter { it.isDigit() }) }
-        }
-        if (telSup.filter { it.isDigit() }.length >= 10 && telSup.filter { it.isDigit() } != telLoja.filter { it.isDigit() })
-            botaoAba(s2, "🛟 Suporte NexumCell (WhatsApp)") { whats(telSup, msg) }
+        botaoAba(s2, "🛟 Falar com o Suporte NexumCell (WhatsApp)", true) { whats(telSup, msg) }
         botaoAba(s2, "❓ Tirar dúvidas no portal do cliente") { abrirUrl(portal(d)) }
         botaoAba(s2, "🚨 Meu celular foi roubado ou perdido") { abrirUrl(portal(d)) }
         s2.addView(texto("Perguntas frequentes", 16f, negrito = true).apply { setPadding(0, 36, 0, 8) })
         listOf(
-            "Paguei e o celular continua bloqueado. O que faço?" to "A liberação é automática em poucos minutos. Toque em Atualizar na aba Faturas. Se continuar, fale com a loja.",
+            "Paguei e o celular continua bloqueado. O que faço?" to "A liberação é automática em poucos minutos. Toque em Atualizar na aba Faturas. Se continuar, fale com o Suporte NexumCell.",
             "Posso pagar antes do vencimento?" to "Sim. Pagando antes você ganha desconto e, quitando tudo, economiza os juros das parcelas que ainda não venceram.",
             "Como mudo o dia de vencimento?" to "Pelo portal do cliente, em Mudar dia do vencimento (uma vez por contrato).",
             "Quando o app sai do celular?" to "Ao quitar o contrato, a proteção é removida automaticamente e você pode desinstalar."
