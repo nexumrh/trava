@@ -12,8 +12,8 @@
     </style>
     <style name="LockTheme" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@drawable/fundo_trava</item>
-        <item name="android:statusBarColor">#3B5F93</item>
-        <item name="android:navigationBarColor">#4A4A5E</item>
+        <item name="android:statusBarColor">#0A1733</item>
+        <item name="android:navigationBarColor">#1F4FB8</item>
         <item name="android:colorAccent">@color/gold</item>
     </style>
     <!-- atalho em pílula da tela de bloqueio -->

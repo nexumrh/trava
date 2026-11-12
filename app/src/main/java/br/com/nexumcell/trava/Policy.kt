@@ -73,6 +73,8 @@ object Policy {
             "com.google.android.dialer", "com.samsung.android.dialer", "com.samsung.android.incallui",
             "com.android.emergency", "com.motorola.dialer", "com.miui.securitycenter"
         ))
+        // apps de banco: o cliente consegue pagar mesmo com o aparelho bloqueado
+        try { l.addAll(Bancos.pacotes(ctx)) } catch (e: Exception) { }
         return l.distinct().toTypedArray()
     }
 

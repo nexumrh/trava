@@ -149,6 +149,11 @@ class Store(ctx: Context) {
         get() = p.getBoolean("finalizado", false)
         set(v) { p.edit().putBoolean("finalizado", v).commit() }
 
+    // bloqueado: até quando o cliente pode ficar fora da tela (app do banco / app NexumCell) sem ela voltar
+    var saidaAte: Long
+        get() = l("saidaAte")
+        set(v) { pl("saidaAte", v) }
+
     // selfie enviada pelo app (ativação do crédito)
     var selfieEnviadaEm: Long
         get() = l("selfieEnviadaEm")

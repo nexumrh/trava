@@ -46,7 +46,8 @@ class LockActivity : Activity() {
 
         findViewById<Button>(R.id.btnVerificar).setOnClickListener { verificar() }
         findViewById<Button>(R.id.btnLoja).setOnClickListener {
-            val tel = Store(this).cache()?.optString("lojaTelefone").orEmpty().filter { it.isDigit() }
+            val c = Store(this).cache()
+            val tel = c?.optString("telefoneSuporte").orEmpty().ifEmpty { c?.optString("lojaTelefone").orEmpty() }.filter { it.isDigit() }
             discar(tel)
         }
         findViewById<Button>(R.id.btnEmergencia).setOnClickListener { discar("") }
@@ -61,6 +62,11 @@ class LockActivity : Activity() {
         findViewById<Button>(R.id.btnPromessa).setOnClickListener { pedirPromessa() }
         findViewById<Button>(R.id.btnCodigo).setOnClickListener { pedirCodigo() }
         findViewById<Button>(R.id.btnPin).setOnClickListener { usarPin() }
+        findViewById<Button>(R.id.btnApp).setOnClickListener {
+            Store(this).saidaAte = System.currentTimeMillis() + 10 * 60_000L
+            startActivity(Intent(this, MainActivity::class.java))
+        }
+        findViewById<Button>(R.id.btnBanco).setOnClickListener { escolherBanco() }
         findViewById<android.widget.EditText>(R.id.edPin).setOnEditorActionListener { _, _, _ -> usarPin(); true }
         findViewById<View>(R.id.tvPix).setOnClickListener {
             val pix = Store(this).cache()?.optString("chavePix").orEmpty()
@@ -92,11 +98,13 @@ class LockActivity : Activity() {
     private val voltar = Runnable { if (Store(this).travado && !Policy.isOwner(this)) Policy.abrirTela(this) }
     override fun onStop() {
         super.onStop()
-        if (Store(this).travado && !Policy.isOwner(this)) { TravaTela.mostrar(this); h.removeCallbacks(voltar); h.postDelayed(voltar, 400) }
+        if (Store(this).travado && !Policy.isOwner(this)) { TravaTela.mostrar(this); h.removeCallbacks(voltar); h.postDelayed(voltar, esperaVolta()) }
     }
+    /** Abriu o app do banco ou o app NexumCell pela tela: dá alguns minutos para pagar antes de a tela voltar. */
+    private fun esperaVolta(): Long = (Store(this).saidaAte - System.currentTimeMillis()).coerceAtLeast(400L)
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        if (Store(this).travado && !Policy.isOwner(this)) { h.removeCallbacks(voltar); h.postDelayed(voltar, 400) }
+        if (Store(this).travado && !Policy.isOwner(this)) { h.removeCallbacks(voltar); h.postDelayed(voltar, esperaVolta()) }
     }
 
     @Deprecated("Bloqueado de propósito")
@@ -197,6 +205,19 @@ class LockActivity : Activity() {
             .setNegativeButton(I18n.t("Cancelar"), null).show()
     }
 
+    /** Lista os apps de banco instalados e abre o escolhido (liberados mesmo com o aparelho bloqueado). */
+    private fun escolherBanco() {
+        val l = Bancos.instalados(this)
+        if (l.isEmpty()) { Toast.makeText(this, I18n.t("Nenhum app de banco encontrado. Pague pelo PIX desta tela."), Toast.LENGTH_LONG).show(); return }
+        android.app.AlertDialog.Builder(this).setTitle(I18n.t("Pagar pelo app do banco"))
+            .setItems(l.map { it.second }.toTypedArray()) { _, i ->
+                try {
+                    Store(this).saidaAte = System.currentTimeMillis() + 10 * 60_000L
+                    startActivity(packageManager.getLaunchIntentForPackage(l[i].first)!!.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                } catch (e: Exception) { Toast.makeText(this, I18n.t("Não foi possível abrir o app."), Toast.LENGTH_SHORT).show() }
+            }.setNegativeButton(I18n.t("Cancelar"), null).show()
+    }
+
     /** PIN digitado no campo da tela (código de 6 números da loja; 10 números = remoção autorizada). */
     private fun usarPin() {
         val ed = findViewById<android.widget.EditText>(R.id.edPin)
@@ -272,19 +293,16 @@ class LockActivity : Activity() {
         atualizarConfianca()
         val st = Store(this)
         val d = st.cache()
-        val empresa = d?.optString("lojaNome").orEmpty().ifEmpty { d?.optString("recebedor").orEmpty() }.ifEmpty { "NexumCell" }
-        findViewById<TextView>(R.id.tvEmpresa).text = empresa.uppercase(Locale("pt", "BR"))
+        val loja = d?.optString("lojaNome").orEmpty()
+        findViewById<TextView>(R.id.tvEmpresa).text = if (loja.isEmpty()) "" else I18n.t("Loja") + ": " + loja
         findViewById<TextView>(R.id.tvChave).text = I18n.t("Chave de acesso") + ": " + Chave.de(st.token)
         findViewById<TextView>(R.id.tvImei).text = "IMEI: " + d?.optString("imei").orEmpty().ifEmpty { "-" }
-        findViewById<TextView>(R.id.tvMotivo).text = st.motivo.let { m ->
-            when {
-                m.isEmpty() -> I18n.t("Dispositivo bloqueado")
-                m.contains("atraso", true) -> I18n.t("Dispositivo bloqueado por mora")
-                else -> I18n.t("Dispositivo bloqueado") + "\n" + m
-            } }
-        findViewById<TextView>(R.id.tvMensagem).apply {
-            text = d?.optString("mensagem").orEmpty().ifEmpty { "Regularize o pagamento para liberar o uso. A liberação é automática depois que o pagamento cai." }
-        }
+        val atraso = st.motivo.isEmpty() || st.motivo.contains("atraso", true)
+        findViewById<TextView>(R.id.tvMotivo).text = if (atraso) I18n.t("DISPOSITIVO BLOQUEADO POR FALTA DE PAGAMENTO") else I18n.t("DISPOSITIVO BLOQUEADO")
+        findViewById<TextView>(R.id.tvMensagem).text = if (atraso)
+            I18n.t("Entre em contato com a NexumCell para a regularização dos débitos, ou pague agora pelo app NexumCell ou pelo app do seu banco. A liberação é automática depois do pagamento.")
+            else st.motivo + "\n" + d?.optString("mensagem").orEmpty().ifEmpty { I18n.t("Entre em contato com a NexumCell.") }
+        findViewById<Button>(R.id.btnBanco).visibility = if (Bancos.instalados(this).isNotEmpty()) View.VISIBLE else View.GONE
 
         val sb = StringBuilder()
         var total = 0.0
@@ -311,11 +329,10 @@ class LockActivity : Activity() {
             text = "Chave PIX: $pix  ·  toque para copiar"
             visibility = if (pix.isEmpty()) View.GONE else View.VISIBLE
         }
-        val loja = d?.optString("lojaNome").orEmpty()
         val tel = d?.optString("lojaTelefone").orEmpty()
         findViewById<TextView>(R.id.tvLoja).text = listOf(loja, tel).filter { it.isNotEmpty() }.joinToString(" · ")
-        findViewById<Button>(R.id.btnLoja).text = if (tel.isEmpty()) "Suporte" else I18n.t("Suporte") + " · " + tel
-        findViewById<Button>(R.id.btnLoja).visibility = if (tel.isEmpty()) View.GONE else View.VISIBLE
+        findViewById<Button>(R.id.btnLoja).text = I18n.t("Falar com a NexumCell")
+        findViewById<Button>(R.id.btnLoja).visibility = if (tel.isEmpty() && d?.optString("telefoneSuporte").isNullOrEmpty()) View.GONE else View.VISIBLE
         findViewById<TextView>(R.id.tvRodape).text =
             "Contrato nº ${d?.optLong("vendaNumero") ?: "-"} · protegido por NexumCell"
     }
