@@ -98,6 +98,17 @@ class Api(private val ctx: Context) {
         throw IOException("chave ($code): $txt")
     }
 
+    /** Selfie tirada no app: grava em selfiesApp/{token} (a loja confere antes de concluir a venda). */
+    fun enviarSelfie(foto: String) {
+        val base = "https://firestore.googleapis.com/v1/projects/${st.projectId}/databases/(default)/documents/selfiesApp"
+        val campos = JSONObject().put("foto", Fs.encode(foto)).put("em", Fs.encode(System.currentTimeMillis()))
+            .put("modelo", Fs.encode("${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"))
+        val body = JSONObject().put("fields", campos).toString()
+        var (code, txt) = http("POST", "$base?documentId=${st.token}", body, idToken())
+        if (code == 409) { val r = http("PATCH", "$base/${st.token}?updateMask.fieldPaths=foto&updateMask.fieldPaths=em&updateMask.fieldPaths=modelo", body, idToken()); code = r.first; txt = r.second }
+        if (code !in 200..299) throw IOException("selfie ($code): $txt")
+    }
+
     fun enviarCheckin(info: Map<String, Any?>) {
         val body = JSONObject().put("fields", JSONObject().put("checkin", Fs.encode(info)))
         val (code, txt) = http("PATCH", docUrl() + "?updateMask.fieldPaths=checkin", body.toString(), idToken())

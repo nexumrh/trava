@@ -1,35 +1,106 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent" android:background="#F4F4F8">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="vertical" android:background="#0A1733" android:padding="20dp">
-            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-                <ImageView android:layout_width="36dp" android:layout_height="36dp" android:src="@drawable/logo_n" android:contentDescription="@string/app_name"/>
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp"
-                    android:text="NexumCell" android:textColor="#FFFFFF" android:textSize="20sp" android:textStyle="bold"/>
-            </LinearLayout>
-            <TextView android:id="@+id/tvSituacao" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="16dp" android:textColor="#FFFFFF" android:textSize="22sp" android:textStyle="bold"/>
-            <TextView android:id="@+id/tvStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="4dp" android:textColor="#C9D3EA" android:textSize="14sp" android:lineSpacingExtra="3dp"/>
-        </LinearLayout>
-        <LinearLayout android:id="@+id/abas" android:layout_width="match_parent" android:layout_height="48dp" android:orientation="horizontal" android:background="#FFFFFF" android:elevation="2dp">
-            <TextView android:id="@+id/abaFaturas" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="Faturas" android:textStyle="bold" android:textSize="15sp" android:textColor="#0A1733"/>
-            <TextView android:id="@+id/abaContrato" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="Contrato" android:textSize="15sp" android:textColor="#696784"/>
-            <TextView android:id="@+id/abaSuporte" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="Suporte" android:textSize="15sp" android:textColor="#696784"/>
-        </LinearLayout>
-        <LinearLayout android:id="@+id/secContrato" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" android:visibility="gone"/>
-        <LinearLayout android:id="@+id/secSuporte" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" android:visibility="gone"/>
-        <LinearLayout android:id="@+id/secFaturas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Minhas faturas"
-                android:textColor="#1B1A2E" android:textSize="17sp" android:textStyle="bold" android:layout_marginBottom="10dp"/>
-            <LinearLayout android:id="@+id/listaFaturas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/>
-            <Button android:id="@+id/btnAtualizar" android:layout_width="match_parent" android:layout_height="50dp"
-                android:layout_marginTop="6dp" android:background="@drawable/btn_outline_claro"
-                android:text="Atualizar" android:textAllCaps="false" android:textColor="#0A1733"/>
-            <TextView android:id="@+id/tvRodape" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="12dp" android:gravity="center" android:textColor="#696784" android:textSize="12sp"/>
-        </LinearLayout>
+<!-- App do cliente: status, dica, acesso rápido, faturas/contrato/suporte e navegação embaixo. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@drawable/fundo_app">
+
+    <!-- barra do topo -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:orientation="horizontal"
+        android:gravity="center_vertical" android:paddingStart="16dp" android:paddingEnd="8dp">
+        <ImageView android:layout_width="30dp" android:layout_height="30dp" android:src="@drawable/logo_n" android:contentDescription="@string/app_name"/>
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center"
+            android:text="NEXUMCELL" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold" android:letterSpacing="0.12"/>
+        <ImageButton android:id="@+id/btnSino" android:layout_width="44dp" android:layout_height="44dp"
+            android:background="@android:color/transparent" android:src="@drawable/ic_sino" android:contentDescription="Avisos"/>
     </LinearLayout>
-</ScrollView>
+
+    <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+            android:paddingStart="20dp" android:paddingEnd="20dp" android:paddingBottom="24dp">
+
+            <!-- status -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="14dp"
+                android:text="Status" android:textColor="#9FB0D0" android:textSize="12sp"/>
+            <TextView android:id="@+id/tvSituacao" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="2dp" android:textColor="#FFFFFF" android:textSize="27sp" android:textStyle="bold"/>
+            <TextView android:id="@+id/tvStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="6dp" android:textColor="#D5DDF0" android:textSize="15sp" android:lineSpacingExtra="3dp"/>
+            <TextView android:id="@+id/tvSaibaMais" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginTop="12dp" android:paddingTop="4dp" android:paddingBottom="4dp"
+                android:text="Saiba mais  ›" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold"/>
+
+            <!-- selfie pedida pela loja (ativação do crédito) -->
+            <LinearLayout android:id="@+id/cardSelfie" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="18dp" android:orientation="vertical" android:background="@drawable/card_dica" android:padding="16dp" android:visibility="gone">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:drawableStart="@drawable/ic_camera" android:drawablePadding="10dp"
+                    android:gravity="center_vertical" android:text="Tire sua selfie" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold"/>
+                <TextView android:id="@+id/tvSelfie" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp"
+                    android:text="É necessário enviar uma selfie pelo app para a loja concluir a ativação do seu crédito." android:textColor="#E6EEFF" android:textSize="14sp"/>
+                <Button android:id="@+id/btnSelfie" android:layout_width="match_parent" android:layout_height="50dp" android:layout_marginTop="12dp"
+                    android:background="@drawable/btn_ciano" android:text="Tirar selfie agora" android:textAllCaps="false" android:textColor="#062A2A" android:textStyle="bold" android:textSize="16sp"/>
+            </LinearLayout>
+
+            <!-- visão geral -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="26dp"
+                android:text="Visão geral" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp"
+                android:orientation="vertical" android:background="@drawable/card_dica" android:padding="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:drawableStart="@drawable/ic_lampada" android:drawablePadding="8dp"
+                    android:gravity="center_vertical" android:text="Você sabia?" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold"/>
+                <TextView android:id="@+id/tvDica" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp"
+                    android:textColor="#E6EEFF" android:textSize="14sp" android:lineSpacingExtra="2dp"
+                    android:text="Se ficar muito tempo desconectado, o aparelho trava sozinho. Reconecte-se ou entre em contato com a loja para recuperar o acesso."/>
+            </LinearLayout>
+
+            <!-- acesso rápido -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="26dp"
+                android:text="Acesso rápido" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:orientation="horizontal">
+                <LinearLayout android:id="@+id/qaApps" style="@style/Atalho">
+                    <ImageView android:layout_width="58dp" android:layout_height="58dp" android:background="@drawable/circulo_ciano" android:padding="16dp" android:src="@drawable/ic_apps" android:contentDescription="Aplicativos permitidos"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:gravity="center" android:text="Aplicativos\npermitidos" android:textColor="#FFFFFF" android:textSize="12sp"/>
+                </LinearLayout>
+                <LinearLayout android:id="@+id/qaContato" style="@style/Atalho">
+                    <ImageView android:layout_width="58dp" android:layout_height="58dp" android:background="@drawable/circulo_ciano" android:padding="16dp" android:src="@drawable/ic_contato" android:contentDescription="Informações de contato"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:gravity="center" android:text="Informações\nde contato" android:textColor="#FFFFFF" android:textSize="12sp"/>
+                </LinearLayout>
+                <LinearLayout android:id="@+id/qaEmergencia" style="@style/Atalho">
+                    <ImageView android:layout_width="58dp" android:layout_height="58dp" android:background="@drawable/circulo_ciano" android:padding="16dp" android:src="@drawable/ic_tel_escuro" android:contentDescription="Chamada de emergência"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:gravity="center" android:text="Chamada de\nemergência" android:textColor="#FFFFFF" android:textSize="12sp"/>
+                </LinearLayout>
+                <LinearLayout android:id="@+id/qaConfig" style="@style/Atalho">
+                    <ImageView android:layout_width="58dp" android:layout_height="58dp" android:background="@drawable/circulo_ciano" android:padding="16dp" android:src="@drawable/ic_config" android:contentDescription="Configurações do dispositivo"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:gravity="center" android:text="Configurações\ndo dispositivo" android:textColor="#FFFFFF" android:textSize="12sp"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- conteúdo das abas (cartão claro) -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="26dp"
+                android:orientation="vertical" android:background="@drawable/card_app">
+                <LinearLayout android:id="@+id/secContrato" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" android:visibility="gone"/>
+                <LinearLayout android:id="@+id/secSuporte" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" android:visibility="gone"/>
+                <LinearLayout android:id="@+id/secFaturas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Minhas faturas"
+                        android:textColor="#1B1A2E" android:textSize="17sp" android:textStyle="bold" android:layout_marginBottom="10dp"/>
+                    <LinearLayout android:id="@+id/listaFaturas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/>
+                    <Button android:id="@+id/btnAtualizar" android:layout_width="match_parent" android:layout_height="50dp"
+                        android:layout_marginTop="6dp" android:background="@drawable/btn_outline_claro"
+                        android:text="Atualizar" android:textAllCaps="false" android:textColor="#0A1733"/>
+                    <TextView android:id="@+id/tvRodape" android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp" android:gravity="center" android:textColor="#696784" android:textSize="12sp"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- navegação -->
+    <LinearLayout android:id="@+id/abas" android:layout_width="match_parent" android:layout_height="72dp" android:orientation="horizontal"
+        android:background="@drawable/nav_fundo" android:gravity="center_vertical" android:paddingStart="10dp" android:paddingEnd="10dp">
+        <TextView android:id="@+id/abaFaturas" android:layout_width="0dp" android:layout_height="56dp" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp"
+            android:gravity="center" android:drawableTop="@drawable/ic_casa" android:paddingTop="6dp" android:text="Tela inicial" android:textSize="12sp" android:textColor="#FFFFFF"/>
+        <TextView android:id="@+id/abaContrato" android:layout_width="0dp" android:layout_height="56dp" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp"
+            android:gravity="center" android:drawableTop="@drawable/ic_doc" android:paddingTop="6dp" android:text="Contrato" android:textSize="12sp" android:textColor="#9FB0D0"/>
+        <TextView android:id="@+id/abaSuporte" android:layout_width="0dp" android:layout_height="56dp" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp"
+            android:gravity="center" android:drawableTop="@drawable/ic_suporte" android:paddingTop="6dp" android:text="Suporte" android:textSize="12sp" android:textColor="#9FB0D0"/>
+    </LinearLayout>
+</LinearLayout>

@@ -60,6 +60,8 @@ class LockActivity : Activity() {
         findViewById<Button>(R.id.btnConfianca).setOnClickListener { pedirConfianca() }
         findViewById<Button>(R.id.btnPromessa).setOnClickListener { pedirPromessa() }
         findViewById<Button>(R.id.btnCodigo).setOnClickListener { pedirCodigo() }
+        findViewById<Button>(R.id.btnPin).setOnClickListener { usarPin() }
+        findViewById<android.widget.EditText>(R.id.edPin).setOnEditorActionListener { _, _, _ -> usarPin(); true }
         findViewById<View>(R.id.tvPix).setOnClickListener {
             val pix = Store(this).cache()?.optString("chavePix").orEmpty()
             if (pix.isNotEmpty()) {
@@ -191,17 +193,29 @@ class LockActivity : Activity() {
             .setTitle(I18n.t("Código da loja"))
             .setMessage(I18n.t("Digite o código de 6 números que a loja passou. Funciona mesmo sem internet."))
             .setView(ed)
-            .setPositiveButton(I18n.t("Liberar")) { _, _ ->
-                val txt = ed.text.toString().filter { it.isDigit() }
-                // código de 10 dígitos = remoção definitiva da trava (equipe)
-                if (txt.length == 10 && Remocao.confere(this, txt)) { confirmarRemocao(); return@setPositiveButton }
-                val erro = Codigo.validar(this, txt)
-                if (erro != null) { Toast.makeText(this, erro, Toast.LENGTH_LONG).show(); return@setPositiveButton }
-                Thread { Sync.executar(applicationContext); runOnUiThread {
-                    Toast.makeText(this, I18n.t("Aparelho liberado pela loja."), Toast.LENGTH_LONG).show()
-                    if (!Store(this).travado) sair() } }.start()
-            }
+            .setPositiveButton(I18n.t("Liberar")) { _, _ -> aplicarCodigo(ed.text.toString()) }
             .setNegativeButton(I18n.t("Cancelar"), null).show()
+    }
+
+    /** PIN digitado no campo da tela (código de 6 números da loja; 10 números = remoção autorizada). */
+    private fun usarPin() {
+        val ed = findViewById<android.widget.EditText>(R.id.edPin)
+        val txt = ed.text.toString()
+        if (txt.filter { it.isDigit() }.length < 6) { Toast.makeText(this, I18n.t("Digite o PIN que a loja passou."), Toast.LENGTH_SHORT).show(); return }
+        ed.setText("")
+        try { getSystemService(android.view.inputmethod.InputMethodManager::class.java)?.hideSoftInputFromWindow(ed.windowToken, 0) } catch (e: Exception) { }
+        aplicarCodigo(txt)
+    }
+
+    private fun aplicarCodigo(bruto: String) {
+        val txt = bruto.filter { it.isDigit() }
+        // código de 10 dígitos = remoção definitiva da trava (equipe)
+        if (txt.length == 10 && Remocao.confere(this, txt)) { confirmarRemocao(); return }
+        val erro = Codigo.validar(this, txt)
+        if (erro != null) { Toast.makeText(this, erro, Toast.LENGTH_LONG).show(); return }
+        Thread { Sync.executar(applicationContext); runOnUiThread {
+            Toast.makeText(this, I18n.t("Aparelho liberado pela loja."), Toast.LENGTH_LONG).show()
+            if (!Store(this).travado) sair() } }.start()
     }
 
     /** Código de remoção válido: confirma e tira a trava da NexumCell deste aparelho. */
@@ -258,9 +272,19 @@ class LockActivity : Activity() {
         atualizarConfianca()
         val st = Store(this)
         val d = st.cache()
-        findViewById<TextView>(R.id.tvMotivo).text = st.motivo.ifEmpty { "Aparelho bloqueado" }
-        findViewById<TextView>(R.id.tvMensagem).text = d?.optString("mensagem").orEmpty()
-            .ifEmpty { "Seu aparelho foi bloqueado por atraso no pagamento. Regularize para liberar o uso." }
+        val empresa = d?.optString("lojaNome").orEmpty().ifEmpty { d?.optString("recebedor").orEmpty() }.ifEmpty { "NexumCell" }
+        findViewById<TextView>(R.id.tvEmpresa).text = empresa.uppercase(Locale("pt", "BR"))
+        findViewById<TextView>(R.id.tvChave).text = I18n.t("Chave de acesso") + ": " + Chave.de(st.token)
+        findViewById<TextView>(R.id.tvImei).text = "IMEI: " + d?.optString("imei").orEmpty().ifEmpty { "-" }
+        findViewById<TextView>(R.id.tvMotivo).text = st.motivo.let { m ->
+            when {
+                m.isEmpty() -> I18n.t("Dispositivo bloqueado")
+                m.contains("atraso", true) -> I18n.t("Dispositivo bloqueado por mora")
+                else -> I18n.t("Dispositivo bloqueado") + "\n" + m
+            } }
+        findViewById<TextView>(R.id.tvMensagem).apply {
+            text = d?.optString("mensagem").orEmpty().ifEmpty { "Regularize o pagamento para liberar o uso. A liberação é automática depois que o pagamento cai." }
+        }
 
         val sb = StringBuilder()
         var total = 0.0
@@ -284,14 +308,15 @@ class LockActivity : Activity() {
 
         val pix = d?.optString("chavePix").orEmpty()
         findViewById<TextView>(R.id.tvPix).apply {
-            text = "Chave PIX: $pix\n(toque para copiar)"
+            text = "Chave PIX: $pix  ·  toque para copiar"
             visibility = if (pix.isEmpty()) View.GONE else View.VISIBLE
         }
         val loja = d?.optString("lojaNome").orEmpty()
         val tel = d?.optString("lojaTelefone").orEmpty()
         findViewById<TextView>(R.id.tvLoja).text = listOf(loja, tel).filter { it.isNotEmpty() }.joinToString(" · ")
+        findViewById<Button>(R.id.btnLoja).text = if (tel.isEmpty()) "Suporte" else I18n.t("Suporte") + " · " + tel
         findViewById<Button>(R.id.btnLoja).visibility = if (tel.isEmpty()) View.GONE else View.VISIBLE
         findViewById<TextView>(R.id.tvRodape).text =
-            "Contrato nº ${d?.optLong("vendaNumero") ?: "-"} · IMEI ${d?.optString("imei").orEmpty()}\nChamadas de emergência continuam disponíveis."
+            "Contrato nº ${d?.optLong("vendaNumero") ?: "-"} · protegido por NexumCell"
     }
 }

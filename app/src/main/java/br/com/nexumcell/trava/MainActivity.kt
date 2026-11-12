@@ -26,6 +26,13 @@ class MainActivity : Activity() {
         findViewById<TextView>(R.id.abaFaturas).setOnClickListener { abrirAba(0) }
         findViewById<TextView>(R.id.abaContrato).setOnClickListener { abrirAba(1) }
         findViewById<TextView>(R.id.abaSuporte).setOnClickListener { abrirAba(2) }
+        findViewById<View>(R.id.btnSino).setOnClickListener { abrirAba(0); atualizar() }
+        findViewById<View>(R.id.tvSaibaMais).setOnClickListener { abrirAba(1) }
+        findViewById<View>(R.id.qaApps).setOnClickListener { appsPermitidos() }
+        findViewById<View>(R.id.qaContato).setOnClickListener { abrirAba(2) }
+        findViewById<View>(R.id.qaEmergencia).setOnClickListener { try { startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:190"))) } catch (e: Exception) { } }
+        findViewById<View>(R.id.qaConfig).setOnClickListener { try { startActivity(Intent(Settings.ACTION_SETTINGS)) } catch (e: Exception) { } }
+        findViewById<Button>(R.id.btnSelfie).setOnClickListener { tirarSelfie() }
         lerLink(intent)
     }
 
@@ -222,13 +229,14 @@ class MainActivity : Activity() {
         val fat = Faturas.lista(d)
         val abertas = fat.filter { !it.pago }
         val atrasadas = abertas.filter { it.diasAtraso > 0 }
-        sit.text = when {
-            r.travar -> "Aparelho bloqueado"
-            atrasadas.isNotEmpty() -> "Fatura em atraso"
-            else -> "Suas faturas estão em dia"
-        }
+        sit.text = if (r.travar) "Dispositivo bloqueado" else "Dispositivo desbloqueado"
         val prox = abertas.minByOrNull { it.venc }
         tv.text = buildString {
+            append(when {
+                r.travar -> "Regularize o pagamento para liberar. A liberação é automática.\n"
+                atrasadas.isNotEmpty() -> "Você tem fatura em atraso: pague para não ser bloqueado.\n"
+                else -> "Tudo está atualizado. Use este aplicativo para acompanhar seus pagamentos e o seu financiamento.\n"
+            })
             append("Contrato nº ${d.optLong("vendaNumero")} · ${d.optString("marca")} ${d.optString("modelo")}\n")
             append("${fat.count { it.pago }} de ${fat.size} parcelas pagas")
             if (prox != null && atrasadas.isEmpty()) append("\nPróximo vencimento: ${prox.venc.format(Faturas.fmt)} · ${Faturas.brl.format(prox.valor)}")
@@ -250,6 +258,11 @@ class MainActivity : Activity() {
             if (st.ultimoSyncOk > 0) append("Atualizado em ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR")).format(Date(st.ultimoSyncOk))}")
         }
         findViewById<View>(R.id.abas).visibility = View.VISIBLE
+        val offline = d.optInt("maxDiasOffline", 0)
+        findViewById<TextView>(R.id.tvDica).text = if (offline > 0)
+            "Se ficar mais de $offline dias sem internet, o aparelho trava sozinho. Reconecte-se ou fale com a loja para recuperar o acesso."
+            else "Se ficar muito tempo desconectado, o aparelho trava sozinho. Reconecte-se ou fale com a loja para recuperar o acesso."
+        mostrarSelfie(d)
         preencherAbas(d)
         abrirAba(abaAtual, false)
     }
@@ -262,9 +275,9 @@ class MainActivity : Activity() {
         val abas = listOf(R.id.abaFaturas, R.id.abaContrato, R.id.abaSuporte)
         ids.forEachIndexed { k, id -> findViewById<View>(id).visibility = if (k == i) View.VISIBLE else View.GONE }
         abas.forEachIndexed { k, id -> findViewById<TextView>(id).apply {
-            setTextColor(android.graphics.Color.parseColor(if (k == i) "#0A1733" else "#696784"))
+            setTextColor(android.graphics.Color.parseColor(if (k == i) "#FFFFFF" else "#9FB0D0"))
             setTypeface(null, if (k == i) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
-            setBackgroundColor(android.graphics.Color.parseColor(if (k == i) "#EEF3FF" else "#FFFFFF"))
+            if (k == i) setBackgroundResource(R.drawable.nav_ativo) else setBackgroundColor(android.graphics.Color.TRANSPARENT)
         } }
     }
 
@@ -281,6 +294,86 @@ class MainActivity : Activity() {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = 18 }
             setOnClickListener { acao() }
         })
+    }
+
+    /* ---------- Acesso rápido ---------- */
+    private fun appsPermitidos() {
+        val pm = packageManager
+        val nomes = listOf(packageName, "com.android.dialer", "com.google.android.dialer", "com.samsung.android.dialer", "com.motorola.dialer")
+            .mapNotNull { try { pm.getApplicationLabel(pm.getApplicationInfo(it, 0)).toString() } catch (e: Exception) { null } }.distinct()
+        android.app.AlertDialog.Builder(this).setTitle("Aplicativos permitidos")
+            .setMessage("Com o aparelho em dia, você usa todos os aplicativos normalmente.\n\nSe o aparelho for bloqueado por atraso, continuam funcionando:\n• " +
+                (nomes + "Chamadas de emergência (190, 192, 193)").joinToString("\n• ") + "\n\nPelo app NexumCell você paga por PIX e o aparelho libera sozinho.")
+            .setPositiveButton("Entendi", null).show()
+    }
+
+    /* ---------- Selfie pelo app (a loja só conclui a venda depois que ela chega) ---------- */
+    private var arqSelfie: java.io.File? = null
+    private fun mostrarSelfie(d: org.json.JSONObject) {
+        val st = Store(this)
+        val card = findViewById<View>(R.id.cardSelfie)
+        // pedida só na ativação: some 6 h depois de enviada (dá tempo de tirar outra se a loja pedir)
+        val pedida = d.optBoolean("selfieApp") && !d.optBoolean("quitado") &&
+            (st.selfieEnviadaEm == 0L || System.currentTimeMillis() - st.selfieEnviadaEm < 6 * 3_600_000L)
+        card.visibility = if (pedida) View.VISIBLE else View.GONE
+        if (!pedida) return
+        findViewById<TextView>(R.id.tvSelfie).text = if (st.selfieEnviadaEm > 0)
+            "Selfie enviada. Aguarde a loja confirmar. Se pedirem, tire de novo."
+            else "É necessário enviar uma selfie pelo app para a loja concluir a ativação do seu crédito."
+        findViewById<Button>(R.id.btnSelfie).text = if (st.selfieEnviadaEm > 0) "Tirar outra selfie" else "Tirar selfie agora"
+    }
+
+    private fun tirarSelfie() {
+        try {
+            val dir = java.io.File(cacheDir, "selfie").apply { mkdirs() }
+            val f = java.io.File(dir, "selfie.jpg"); if (f.exists()) f.delete(); arqSelfie = f
+            val uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.arquivos", f)
+            val i = Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
+                .putExtra(android.provider.MediaStore.EXTRA_OUTPUT, uri)
+                .putExtra("android.intent.extras.CAMERA_FACING", 1).putExtra("android.intent.extras.LENS_FACING_FRONT", 1)
+                .putExtra("android.intent.extra.USE_FRONT_CAMERA", true)
+                .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            @Suppress("DEPRECATION") startActivityForResult(i, 42)
+        } catch (e: Exception) {
+            android.widget.Toast.makeText(this, "Não foi possível abrir a câmera.", android.widget.Toast.LENGTH_LONG).show()
+        }
+    }
+
+    @Deprecated("API antiga, mas simples e sem biblioteca extra")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        @Suppress("DEPRECATION") super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != 42 || resultCode != RESULT_OK) return
+        val f = arqSelfie ?: return
+        val btn = findViewById<Button>(R.id.btnSelfie); btn.isEnabled = false; btn.text = "Enviando…"
+        Thread {
+            val ok = try {
+                val b64 = fotoBase64(f) ?: throw Exception("foto")
+                Api(this).enviarSelfie("data:image/jpeg;base64,$b64")
+                Store(this).selfieEnviadaEm = System.currentTimeMillis(); f.delete(); true
+            } catch (e: Exception) { false }
+            runOnUiThread {
+                btn.isEnabled = true
+                android.widget.Toast.makeText(this, if (ok) "Selfie enviada para a loja." else "Não foi possível enviar. Confira a internet e tente de novo.", android.widget.Toast.LENGTH_LONG).show()
+                mostrar()
+            }
+        }.start()
+    }
+
+    /** Lê a foto, acerta a rotação, reduz para no máximo 720 px e devolve em base64 (JPEG). */
+    private fun fotoBase64(f: java.io.File): String? {
+        val op = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        android.graphics.BitmapFactory.decodeFile(f.path, op)
+        if (op.outWidth <= 0) return null
+        var amostra = 1; while (maxOf(op.outWidth, op.outHeight) / (amostra * 2) >= 720) amostra *= 2
+        var bmp = android.graphics.BitmapFactory.decodeFile(f.path, android.graphics.BitmapFactory.Options().apply { inSampleSize = amostra }) ?: return null
+        val graus = when (android.media.ExifInterface(f.path).getAttributeInt(android.media.ExifInterface.TAG_ORIENTATION, 1)) {
+            android.media.ExifInterface.ORIENTATION_ROTATE_90 -> 90f; android.media.ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+            android.media.ExifInterface.ORIENTATION_ROTATE_270 -> 270f; else -> 0f }
+        val esc = minOf(1f, 720f / maxOf(bmp.width, bmp.height))
+        val mx = android.graphics.Matrix().apply { postScale(esc, esc); if (graus != 0f) postRotate(graus) }
+        bmp = android.graphics.Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, mx, true)
+        val out = java.io.ByteArrayOutputStream(); bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 78, out)
+        return android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP)
     }
 
     private fun preencherAbas(d: org.json.JSONObject) {

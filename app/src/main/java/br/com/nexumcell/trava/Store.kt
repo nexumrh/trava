@@ -149,6 +149,11 @@ class Store(ctx: Context) {
         get() = p.getBoolean("finalizado", false)
         set(v) { p.edit().putBoolean("finalizado", v).commit() }
 
+    // selfie enviada pelo app (ativação do crédito)
+    var selfieEnviadaEm: Long
+        get() = l("selfieEnviadaEm")
+        set(v) { pl("selfieEnviadaEm", v) }
+
     val configurado: Boolean get() = token.isNotEmpty() && apiKey.isNotEmpty() && projectId.isNotEmpty()
 
     fun salvarExtras(b: PersistableBundle?) {
