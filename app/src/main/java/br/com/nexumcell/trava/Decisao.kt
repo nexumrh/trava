@@ -59,9 +59,19 @@ object Decisao {
         if (maior >= parcialDias) return Resultado(false, "Funções limitadas: $maior dias de atraso", nivel = 2)
         if (maior >= avisoDias) return Resultado(false, "Parcela em atraso há $maior dia(s)", nivel = 1)
 
+        // Aparelho mantido offline (sem sincronizar com o sistema): reage em etapas, não só no fim do prazo.
+        // Assim, quem corta a internet para fugir do vencimento é empurrado a reconectar bem antes do bloqueio total.
         val maxOffline = d.optInt("maxDiasOffline", 15).coerceAtLeast(1)
-        if (ultimoSyncOk > 0 && agora - ultimoSyncOk > maxOffline * DIA) {
-            return Resultado(true, "Aparelho sem conexão há mais de $maxOffline dias. Conecte-se à internet (Wi-Fi ou dados) e toque em verificar.")
+        val avisoOff = d.optInt("offlineAvisoDias", maxOffline / 3).coerceIn(1, maxOffline)
+        val parcialOff = d.optInt("offlineParcialDias", (maxOffline * 2) / 3).coerceIn(avisoOff, maxOffline)
+        if (ultimoSyncOk > 0) {
+            val diasOff = (agora - ultimoSyncOk) / DIA
+            if (diasOff >= maxOffline)
+                return Resultado(true, "Aparelho sem conexão há mais de $maxOffline dias. Conecte-se à internet (Wi-Fi ou dados) e toque em verificar.")
+            if (diasOff >= parcialOff)
+                return Resultado(false, "Sem conexão há $diasOff dias. Conecte à internet para não bloquear.", nivel = 2)
+            if (diasOff >= avisoOff)
+                return Resultado(false, "Faz $diasOff dias que o aparelho não fala com o sistema. Conecte à internet.", nivel = 1)
         }
         return Resultado(false, "Em dia")
     }
