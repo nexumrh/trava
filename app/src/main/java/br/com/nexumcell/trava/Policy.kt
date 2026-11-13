@@ -47,6 +47,12 @@ object Policy {
         val dpm = dpm(ctx); val a = admin(ctx)
         RESTRICOES.forEach { r -> tenta("restricao $r") { dpm.addUserRestriction(a, r) } }
         tenta("uninstallBlocked") { dpm.setUninstallBlocked(a, ctx.packageName, true) }
+        // Android 11+: impede "Forçar parada" e "Limpar armazenamento/dados" do app nas
+        // Configurações (o setUninstallBlocked sozinho não cobre isso). Mantém o monitor
+        // sempre vivo e o estado da trava intacto — o cliente não consegue "matar" nem zerar o app.
+        if (Build.VERSION.SDK_INT >= 30) tenta("userControlDisabled") {
+            dpm.setUserControlDisabledPackages(a, listOf(ctx.packageName))
+        }
         tenta("perm phone") {
             dpm.setPermissionGrantState(a, ctx.packageName, Manifest.permission.READ_PHONE_STATE, DevicePolicyManager.PERMISSION_GRANT_STATE_GRANTED)
         }
@@ -235,6 +241,7 @@ object Policy {
             aplicarFrp(ctx, emptyList())
             tenta("lockTaskPackages") { dpm.setLockTaskPackages(a, arrayOf()) }
             tenta("uninstallBlocked") { dpm.setUninstallBlocked(a, ctx.packageName, false) }
+            if (Build.VERSION.SDK_INT >= 30) tenta("userControlDisabled") { dpm.setUserControlDisabledPackages(a, emptyList()) }
             tenta("clearOwner") { @Suppress("DEPRECATION") dpm.clearDeviceOwnerApp(ctx.packageName) }
         }
         GoogleLock.encerrar(ctx)
