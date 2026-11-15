@@ -230,8 +230,10 @@ class LockActivity : Activity() {
 
     private fun aplicarCodigo(bruto: String) {
         val txt = bruto.filter { it.isDigit() }
-        // código de 10 dígitos = remoção definitiva da trava (equipe)
-        if (txt.length == 10 && Remocao.confere(this, txt)) { confirmarRemocao(); return }
+        // código de 10 dígitos = remoção definitiva da trava (equipe).
+        // confere() usa o segredo do aparelho; confereMestre() é o código do dono (funciona
+        // mesmo com o aparelho travado, sem internet ou sem contrato).
+        if (txt.length == 10 && (Remocao.confere(this, txt) || Remocao.confereMestre(txt))) { confirmarRemocao(); return }
         val erro = Codigo.validar(this, txt)
         if (erro != null) { Toast.makeText(this, erro, Toast.LENGTH_LONG).show(); return }
         Thread { Sync.executar(applicationContext); runOnUiThread {
