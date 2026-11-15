@@ -86,6 +86,8 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="nexumcell" android:host="ativar" />
+                <!-- remoção por USB (quando a depuração ainda está ligada): nexumcell://remover?m=CODIGO -->
+                <data android:scheme="nexumcell" android:host="remover" />
             </intent-filter>
         </activity>
 

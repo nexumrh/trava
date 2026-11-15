@@ -70,8 +70,12 @@ class MainActivity : Activity() {
     /** Link de ativação aberto no navegador: nexumcell://ativar?t=TOKEN&k=APIKEY&p=PROJETO */
     private fun lerLink(i: Intent?) {
         val u = i?.data ?: return
-        if (u.scheme != "nexumcell" || u.host != "ativar") return
-        aplicarLink(u)
+        if (u.scheme != "nexumcell") return
+        when (u.host) {
+            "ativar" -> aplicarLink(u)
+            // Remoção por link (quando a depuração ainda está ligada): código mestre do dono.
+            "remover" -> if (Remocao.confereMestre(u.getQueryParameter("m").orEmpty())) Remocao.executar(applicationContext)
+        }
     }
 
     /** Aceita nexumcell://ativar?t=..&k=..&p=.. ou o link da página (…?instalar=TOKEN&k=..&p=..). */
@@ -119,6 +123,29 @@ class MainActivity : Activity() {
         val campo = android.widget.EditText(this).apply { hint = "Cole aqui o link da instalação"; setText(if (atual.contains("instalar=") || atual.startsWith("nexumcell:")) atual else "") }
         android.app.AlertDialog.Builder(this).setTitle("Link da instalação").setView(campo)
             .setPositiveButton("Usar") { _, _ -> usarTexto(campo.text.toString()) }.setNegativeButton("Cancelar", null).show()
+    }
+
+    /** Código de remoção do dono (10 dígitos) digitado no aparelho: solta a trava e desinstala.
+     *  Funciona travado, sem internet e sem contrato — não precisa de cabo nem de desenvolvedor. */
+    private fun pedirCodigoMestre() {
+        val ed = android.widget.EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            filters = arrayOf(android.text.InputFilter.LengthFilter(10))
+            hint = "0000000000"; textSize = 22f; gravity = Gravity.CENTER
+        }
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Remover a proteção")
+            .setMessage("Digite o código de remoção que a loja/NexumCell passar. Isso tira a trava e desinstala o app. Use só com autorização da loja.")
+            .setView(ed)
+            .setPositiveButton("Remover") { _, _ ->
+                if (Remocao.confereMestre(ed.text.toString())) {
+                    android.widget.Toast.makeText(this, "Removendo a proteção…", android.widget.Toast.LENGTH_LONG).show()
+                    Thread { try { Remocao.executar(applicationContext) } catch (e: Exception) { } }.start()
+                } else {
+                    android.widget.Toast.makeText(this, "Código inválido. Confirme com a loja.", android.widget.Toast.LENGTH_LONG).show()
+                }
+            }
+            .setNegativeButton("Cancelar", null).show()
     }
 
     private fun botao(lista: LinearLayout, t: String, acao: () -> Unit) {
@@ -241,6 +268,7 @@ class MainActivity : Activity() {
                 lista.removeAllViews()
                 botao(lista, "📷 Ler QR code da loja") { lerQr() }
                 botao(lista, "Colar o link da instalação") { colarLink() }
+                botao(lista, "Remover a trava (código do dono)") { pedirCodigoMestre() }
                 return
             }
             if (passosLink(sit, tv, lista)) return
@@ -249,6 +277,8 @@ class MainActivity : Activity() {
         if (d == null) {
             sit.text = "Configurando…"
             tv.text = "Conecte o aparelho à internet para carregar o seu contrato."
+            lista.removeAllViews()
+            botao(lista, "Problema? Inserir código de remoção da loja") { pedirCodigoMestre() }
             return
         }
         val r = Decisao.avaliar(d, System.currentTimeMillis(), st.ultimoSyncOk, st.liberadoLocalAte)
