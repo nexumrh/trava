@@ -56,6 +56,10 @@ class Store(ctx: Context) {
     var ultimoSyncOk: Long
         get() = l("ultimoSyncOk")
         set(v) { pl("ultimoSyncOk", v) }
+    // Quando a tela "Configurando…" começou (para detectar instalação travada).
+    var configDesde: Long
+        get() = l("configDesde")
+        set(v) { pl("configDesde", v) }
 
     // Estado local da trava
     var travado: Boolean
