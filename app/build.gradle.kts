@@ -14,13 +14,6 @@ android {
         versionCode = (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0) + 2
         versionName = "1.2"
         buildConfigField("String", "UPDATE_API", "\"https://api.github.com/repos/nexumrh/trava/releases/latest\"")
-        // Segredo MESTRE da remoção: vem do secret do GitHub (env MESTRE_REMOCAO), nunca fica no repositório.
-        // Em build local sem o segredo, usa o provisório só pra compilar.
-        buildConfigField(
-            "String",
-            "MESTRE_REMOCAO",
-            "\"${System.getenv("MESTRE_REMOCAO") ?: "NEXUMCELL-REMOVER-USB-mude-este-segredo-2026"}\""
-        )
     }
 
     // Assinatura: o GitHub Actions passa a chave pelos secrets (nunca fica no repositório)
