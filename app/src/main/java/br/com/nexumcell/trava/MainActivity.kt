@@ -50,25 +50,55 @@ class MainActivity : Activity() {
      * do que a tela consiga carregar. Garante que o código de remoção da loja/dono pode
      * ser inserido em qualquer estado, inclusive com o app preso em "Configurando…".
      */
+    private fun linkRodape(txt: String, acao: () -> Unit) = TextView(this).apply {
+        text = txt; textSize = 13f; setTextColor(Color.parseColor("#1D4ED8"))
+        gravity = Gravity.CENTER; setPadding(dpx(14), dpx(8), dpx(14), dpx(8)); isClickable = true
+        paintFlags = paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG
+        background = GradientDrawable().apply {
+            cornerRadius = dpx(20).toFloat(); setColor(Color.parseColor("#F2F5FF"))
+            setStroke(dpx(1), Color.parseColor("#1D4ED8"))
+        }
+        setOnClickListener { acao() }
+    }
+
     private fun linkRemocaoFixo() {
-        val link = TextView(this).apply {
-            text = "Problema? Inserir código de remoção da loja"
-            textSize = 13f; setTextColor(Color.parseColor("#1D4ED8"))
-            gravity = Gravity.CENTER; setPadding(dpx(14), dpx(8), dpx(14), dpx(8)); isClickable = true
-            paintFlags = paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG
-            background = GradientDrawable().apply {
-                cornerRadius = dpx(20).toFloat(); setColor(Color.parseColor("#F2F5FF"))
-                setStroke(dpx(1), Color.parseColor("#1D4ED8"))
-            }
-            setOnClickListener { pedirCodigoMestre() }
+        val col = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(linkRodape("Status da instalação") { telaDiagnostico() },
+                LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dpx(8) })
+            addView(linkRodape("Problema? Inserir código de remoção da loja") { pedirCodigoMestre() })
         }
         val lp = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
             gravity = Gravity.BOTTOM or Gravity.START; marginStart = dpx(16); bottomMargin = dpx(24)
         }
         addContentView(
-            FrameLayout(this).apply { addView(link, lp) },
+            FrameLayout(this).apply { addView(col, lp) },
             FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
         )
+    }
+
+    /** Uma linha do diagnóstico, com ✓/✗ e dica quando falta. */
+    private fun linhaDiag(lista: LinearLayout, item: Policy.DiagItem) {
+        lista.addView(TextView(this).apply {
+            text = (if (item.ok) "✓  " else "✗  ") + item.titulo + (if (!item.ok) "\n      " + item.dica else "")
+            textSize = 14f
+            setTextColor(Color.parseColor(if (item.ok) "#0E8A5F" else if (item.critico) "#C62828" else "#B06A00"))
+            setPadding(0, dpx(6), 0, dpx(6))
+        })
+    }
+
+    /** Tela "Status da instalação" (item 5): checklist das proteções, acessível em qualquer estado. */
+    private fun telaDiagnostico() {
+        val diag = Policy.diagnostico(this)
+        val faltam = diag.count { it.critico && !it.ok }
+        val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dpx(22), dpx(8), dpx(22), dpx(8)) }
+        diag.forEach { linhaDiag(box, it) }
+        android.app.AlertDialog.Builder(this)
+            .setTitle(if (faltam == 0) "Instalação protegida ✓" else "Status da instalação")
+            .setView(box)
+            .setPositiveButton("Fechar", null)
+            .setNeutralButton("Atualizar") { _, _ -> atualizar() }
+            .show()
     }
 
     /** Portal flutuante de suporte: botão sempre visível que abre o Suporte NexumCell dentro do app. */
@@ -303,9 +333,12 @@ class MainActivity : Activity() {
         val d = st.cache()
         if (d == null) {
             sit.text = "Configurando…"
-            tv.text = "Conecte o aparelho à internet para carregar o seu contrato."
+            val diag = Policy.diagnostico(this)
+            val faltam = diag.count { it.critico && !it.ok }
+            tv.text = if (faltam > 0) "A instalação ainda não está completa. Veja o que falta abaixo e conecte o aparelho à internet."
+                      else "Conecte o aparelho à internet para carregar o seu contrato."
             lista.removeAllViews()
-            botao(lista, "Problema? Inserir código de remoção da loja") { pedirCodigoMestre() }
+            diag.forEach { linhaDiag(lista, it) }
             return
         }
         val r = Decisao.avaliar(d, System.currentTimeMillis(), st.ultimoSyncOk, st.liberadoLocalAte)
