@@ -49,9 +49,8 @@ object Remocao {
     }
 
     // Segredo MESTRE da remoção por USB (aparelho travado / sem conexão / sem contrato).
-    // NÃO fica no código: vem do secret MESTRE_REMOCAO do GitHub, injetado só na hora de compilar.
-    // O MESMO valor precisa estar no servidor (env MESTRE_REMOCAO do Cloudflare) — troque os dois juntos.
-    private const val MESTRE = BuildConfig.MESTRE_REMOCAO
+    // O MESMO segredo está no servidor (env MESTRE_REMOCAO do Cloudflare) — troque os dois juntos.
+    private const val MESTRE = "NEXUMCELL-REMOVER-USB-mude-este-segredo-2026"
 
     private fun calcularMestre(dia: String): String {
         val mac = Mac.getInstance("HmacSHA256")

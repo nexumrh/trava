@@ -56,12 +56,7 @@ jobs:
           echo "assinado=sim" >> $GITHUB_OUTPUT
 
       - name: Compilar
-        env:
-          MESTRE_REMOCAO: ${{ secrets.MESTRE_REMOCAO }}
         run: |
-          if [ -z "$MESTRE_REMOCAO" ]; then
-            echo "::warning::Sem o segredo MESTRE_REMOCAO: o APK sai com o segredo provisório. Crie o secret MESTRE_REMOCAO (igual ao env do Cloudflare) para fechar a remoção."
-          fi
           if [ "${{ steps.chave.outputs.assinado }}" = "sim" ]; then
             gradle --no-daemon assembleRelease
             cp app/build/outputs/apk/release/app-release.apk nexumcell-trava.apk
