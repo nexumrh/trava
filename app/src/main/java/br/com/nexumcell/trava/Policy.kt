@@ -102,6 +102,11 @@ object Policy {
                 dpm.addPersistentPreferredActivity(a, f, ComponentName(ctx.packageName, "${ctx.packageName}.LockHome"))
             }
             tenta("statusBar") { dpm.setStatusBarDisabled(a, true) }
+            // Android 12+: desliga o sinal de dados do USB enquanto bloqueado — ninguém pluga no
+            // computador para tentar mexer. O carregamento continua. Religa ao liberar/remover.
+            if (Build.VERSION.SDK_INT >= 31) tenta("usbData off") {
+                if (dpm.canUsbDataSignalingBeDisabled()) dpm.setUsbDataSignalingEnabled(false)
+            }
         }
         if (!jaEstava) GoogleLock.travar(ctx)
         abrirTela(ctx)
@@ -116,6 +121,10 @@ object Policy {
             val dpm = dpm(ctx); val a = admin(ctx)
             tenta("clearPreferred") { dpm.clearPackagePersistentPreferredActivities(a, ctx.packageName) }
             tenta("statusBar") { dpm.setStatusBarDisabled(a, false) }
+            // religa o sinal de dados do USB ao liberar o aparelho
+            if (Build.VERSION.SDK_INT >= 31) tenta("usbData on") {
+                if (dpm.canUsbDataSignalingBeDisabled()) dpm.setUsbDataSignalingEnabled(true)
+            }
         }
         setHome(ctx, false)
         TravaTela.esconder(ctx)
@@ -242,6 +251,7 @@ object Policy {
             tenta("lockTaskPackages") { dpm.setLockTaskPackages(a, arrayOf()) }
             tenta("uninstallBlocked") { dpm.setUninstallBlocked(a, ctx.packageName, false) }
             if (Build.VERSION.SDK_INT >= 30) tenta("userControlDisabled") { dpm.setUserControlDisabledPackages(a, emptyList()) }
+            if (Build.VERSION.SDK_INT >= 31) tenta("usbData on") { if (dpm.canUsbDataSignalingBeDisabled()) dpm.setUsbDataSignalingEnabled(true) }
             tenta("clearOwner") { @Suppress("DEPRECATION") dpm.clearDeviceOwnerApp(ctx.packageName) }
         }
         GoogleLock.encerrar(ctx)
