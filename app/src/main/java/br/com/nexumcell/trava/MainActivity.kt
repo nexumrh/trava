@@ -21,6 +21,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/** Minutos preso em "Configurando…" até oferecer as opções de recuperação. */
+private const val MIN_INSTALACAO_TRAVADA = 15L
+
 /** App do cliente: situação do contrato e "Minhas faturas" com pagamento por PIX. */
 class MainActivity : Activity() {
 
@@ -333,14 +336,26 @@ class MainActivity : Activity() {
         val d = st.cache()
         if (d == null) {
             sit.text = "Configurando…"
+            if (st.configDesde == 0L) st.configDesde = System.currentTimeMillis()
+            val min = (System.currentTimeMillis() - st.configDesde) / 60000L
+            val travada = min >= MIN_INSTALACAO_TRAVADA
             val diag = Policy.diagnostico(this)
             val faltam = diag.count { it.critico && !it.ok }
-            tv.text = if (faltam > 0) "A instalação ainda não está completa. Veja o que falta abaixo e conecte o aparelho à internet."
-                      else "Conecte o aparelho à internet para carregar o seu contrato."
+            tv.text = when {
+                travada -> "A instalação parece travada (há $min min sem concluir). Use as opções abaixo ou chame o suporte da loja."
+                faltam > 0 -> "A instalação ainda não está completa. Veja o que falta abaixo e conecte o aparelho à internet."
+                else -> "Conecte o aparelho à internet para carregar o seu contrato."
+            }
             lista.removeAllViews()
             diag.forEach { linhaDiag(lista, it) }
+            if (travada) {
+                botao(lista, "Tentar de novo") { atualizar() }
+                botao(lista, "Remover e reinstalar") { pedirCodigoMestre() }
+                botao(lista, "Falar com o suporte") { startActivity(Intent(this, SuporteActivity::class.java)) }
+            }
             return
         }
+        st.configDesde = 0L
         val r = Decisao.avaliar(d, System.currentTimeMillis(), st.ultimoSyncOk, st.liberadoLocalAte)
         val fat = Faturas.lista(d)
         val abertas = fat.filter { !it.pago }

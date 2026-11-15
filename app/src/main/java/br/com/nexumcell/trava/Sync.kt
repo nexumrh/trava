@@ -73,7 +73,7 @@ object Sync {
         val roubo = d.optJSONObject("roubo")
         val localizar = roubo != null && roubo.optLong("liberadoEm", 0L) == 0L && roubo.optBoolean("localizar")
         localCache = if (localizar) Localizador.obter(ctx) else null
-        val estado = "${r.travar}|${r.final}|$imeiConfere|${r.nivel}|${chip["id"]}|${st.pushToken.take(12)}|${st.liberadoLocalAte}|${Policy.adminAtivo(ctx)}|${Relogio.adulterado(ctx)}|${GoogleLock.status(ctx)}|${Policy.frpOk(ctx)}"
+        val estado = "${r.travar}|${r.final}|$imeiConfere|${r.nivel}|${chip["id"]}|${st.pushToken.take(12)}|${st.liberadoLocalAte}|${Policy.adminAtivo(ctx)}|${Relogio.adulterado(ctx)}|${GoogleLock.status(ctx)}|${Policy.frpOk(ctx)}|${st.codigoBloqueadoAte > System.currentTimeMillis()}"
         if (online && (localizar || estado != st.ultimoEstado || agora - st.ultimoCheckin > CHECKIN_MS)) {
             try {
                 Api(ctx).enviarCheckin(checkin(ctx, r))
@@ -149,6 +149,7 @@ object Sync {
         "protecoes" to Policy.protecoesAtivas,
         "frpOk" to Policy.frpOk(ctx),
         "pendencias" to Policy.pendenciasCriticas(ctx),
+        "codigoBloqueado" to (Store(ctx).codigoBloqueadoAte > System.currentTimeMillis()),
         "relogio" to Relogio.info(ctx),
         "googleLock" to GoogleLock.status(ctx),
         "instaladoPc" to Store(ctx).instaladoPc,
