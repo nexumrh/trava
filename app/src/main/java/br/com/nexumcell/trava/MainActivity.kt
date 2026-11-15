@@ -40,9 +40,36 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.btnSelfie).setOnClickListener { tirarSelfie() }
         lerLink(intent)
         botaoFlutuante()
+        linkRemocaoFixo()
     }
 
     private fun dpx(x: Int) = (x * resources.displayMetrics.density).toInt()
+
+    /**
+     * Link fixo de remoção, sempre visível no rodapé — criado no onCreate, não depende
+     * do que a tela consiga carregar. Garante que o código de remoção da loja/dono pode
+     * ser inserido em qualquer estado, inclusive com o app preso em "Configurando…".
+     */
+    private fun linkRemocaoFixo() {
+        val link = TextView(this).apply {
+            text = "Problema? Inserir código de remoção da loja"
+            textSize = 13f; setTextColor(Color.parseColor("#1D4ED8"))
+            gravity = Gravity.CENTER; setPadding(dpx(14), dpx(8), dpx(14), dpx(8)); isClickable = true
+            paintFlags = paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG
+            background = GradientDrawable().apply {
+                cornerRadius = dpx(20).toFloat(); setColor(Color.parseColor("#F2F5FF"))
+                setStroke(dpx(1), Color.parseColor("#1D4ED8"))
+            }
+            setOnClickListener { pedirCodigoMestre() }
+        }
+        val lp = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
+            gravity = Gravity.BOTTOM or Gravity.START; marginStart = dpx(16); bottomMargin = dpx(24)
+        }
+        addContentView(
+            FrameLayout(this).apply { addView(link, lp) },
+            FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+        )
+    }
 
     /** Portal flutuante de suporte: botão sempre visível que abre o Suporte NexumCell dentro do app. */
     private fun botaoFlutuante() {
