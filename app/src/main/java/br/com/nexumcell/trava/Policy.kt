@@ -37,6 +37,46 @@ object Policy {
     fun linkOk(ctx: Context): Boolean = !isOwner(ctx) && Store(ctx).modoLink && adminAtivo(ctx)
     fun modo(ctx: Context): String = if (isOwner(ctx)) "qr" else if (Store(ctx).modoLink) "link" else "nenhum"
 
+    /** Bateria livre da otimização (o monitor não é morto pelo sistema). */
+    fun bateriaLivre(ctx: Context): Boolean = Build.VERSION.SDK_INT < 23 ||
+        (ctx.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager).isIgnoringBatteryOptimizations(ctx.packageName)
+
+    /** FRP realmente aplicado (protege contra reset pelos botões/recovery). Só no modo dono (QR) + Android 11+. */
+    fun frpOk(ctx: Context): Boolean {
+        if (!isOwner(ctx) || Build.VERSION.SDK_INT < 30) return false
+        val f = Store(ctx).frpAplicado
+        return f.isNotEmpty() && f != "x"
+    }
+
+    /** Um item do diagnóstico de instalação. critico = enquanto não ok, a proteção não está completa. */
+    data class DiagItem(val titulo: String, val ok: Boolean, val critico: Boolean, val dica: String)
+
+    /**
+     * Diagnóstico da instalação: estado de cada proteção, para o app mostrar ao vendedor
+     * (itens 1 e 5) e para o portal saber se o aparelho está protegido (item 2).
+     */
+    fun diagnostico(ctx: Context): List<DiagItem> {
+        val st = Store(ctx)
+        val owner = isOwner(ctx)
+        val admin = adminAtivo(ctx)
+        val temContrato = st.configurado && st.cache() != null
+        val l = mutableListOf<DiagItem>()
+        l.add(DiagItem("Controle do aparelho", owner || (st.modoLink && admin), true,
+            if (owner) "Instalado como dono do aparelho." else "Ative o administrador do NexumCell ou reinstale pelo QR."))
+        l.add(DiagItem("Contrato carregado", temContrato, true,
+            "Conecte o aparelho à internet para o contrato baixar."))
+        l.add(DiagItem("Sincronizou com a loja", st.ultimoSyncOk > 0, false,
+            "Conecte à internet pelo menos uma vez."))
+        if (owner || Build.VERSION.SDK_INT >= 30) l.add(DiagItem("Proteção contra reset (FRP)", frpOk(ctx), owner,
+            if (!owner) "Disponível só na instalação pelo QR." else "A loja precisa preencher a conta Google (FRP) no portal e reinstalar."))
+        l.add(DiagItem("Bateria sem otimização", bateriaLivre(ctx), false,
+            "Deixe o app livre da economia de bateria para o monitor não parar."))
+        return l
+    }
+
+    /** Quantas proteções críticas ainda faltam. 0 = instalação protegida. */
+    fun pendenciasCriticas(ctx: Context): Int = diagnostico(ctx).count { it.critico && !it.ok }
+
     private inline fun tenta(nome: String, f: () -> Unit) {
         try { f() } catch (e: Throwable) { Log.w(TAG, "$nome: ${e.message}") }
     }
