@@ -32,7 +32,7 @@
             <!-- selfie pedida pela loja (ativação do crédito) -->
             <LinearLayout android:id="@+id/cardSelfie" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="18dp" android:orientation="vertical" android:background="@drawable/card_dica" android:padding="16dp" android:visibility="gone">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:drawableStart="@drawable/ic_camera" android:drawablePadding="10dp"
+                <TextView android:id="@+id/tvSelfieTitulo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:drawableStart="@drawable/ic_camera" android:drawablePadding="10dp"
                     android:gravity="center_vertical" android:text="Tire sua selfie" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold"/>
                 <TextView android:id="@+id/tvSelfie" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp"
                     android:text="É necessário enviar uma selfie pelo app para a loja concluir a ativação do seu crédito." android:textColor="#E6EEFF" android:textSize="14sp"/>

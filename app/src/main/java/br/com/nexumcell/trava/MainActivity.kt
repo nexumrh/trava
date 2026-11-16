@@ -448,6 +448,8 @@ class MainActivity : Activity() {
             (st.selfieEnviadaEm == 0L || System.currentTimeMillis() - st.selfieEnviadaEm < 6 * 3_600_000L)
         card.visibility = if (pedida) View.VISIBLE else View.GONE
         if (!pedida) return
+        val enviada = st.selfieEnviadaEm > 0
+        findViewById<TextView>(R.id.tvSelfieTitulo).text = if (enviada) "Selfie enviada" else "Tire sua selfie"
         findViewById<TextView>(R.id.tvSelfie).text = if (st.selfieEnviadaEm > 0)
             "Selfie enviada. Aguarde a loja confirmar. Se pedirem, tire de novo."
             else "É necessário enviar uma selfie pelo app para a loja concluir a ativação do seu crédito."
