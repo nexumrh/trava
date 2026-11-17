@@ -243,7 +243,7 @@ class SuporteActivity : Activity() {
                 val c = URL("$serv/api/assistente").openConnection() as HttpURLConnection
                 c.requestMethod = "POST"; c.doOutput = true; c.connectTimeout = 15000; c.readTimeout = 30000
                 c.setRequestProperty("Content-Type", "application/json")
-                c.outputStream.use { it.write(JSONObject().put("token", st.token).put("pergunta", q.take(500)).toString().toByteArray()) }
+                c.outputStream.use { it.write(JSONObject().put("token", st.token).put("pergunta", q.take(500)).put("origem", "app").toString().toByteArray()) }
                 JSONObject(c.inputStream.bufferedReader().readText()).optString("resposta").takeIf { it.isNotBlank() && it != "null" }?.let { Assistente.limpar(it) }
             } catch (e: Exception) { null }
             runOnUiThread {
