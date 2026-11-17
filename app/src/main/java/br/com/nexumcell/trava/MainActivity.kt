@@ -316,6 +316,8 @@ class MainActivity : Activity() {
         val lista = findViewById<LinearLayout>(R.id.listaFaturas)
         val rodape = findViewById<TextView>(R.id.tvRodape)
         findViewById<View>(R.id.abas).visibility = View.GONE; abrirAba(0, false)
+        findViewById<View>(R.id.heroPay).visibility = View.GONE
+        findViewById<View>(R.id.grpStatus).visibility = View.VISIBLE
         if (st.finalizado) {
             sit.text = "Contrato quitado"
             tv.text = "Parabéns! Você pagou todas as parcelas. A trava foi removida e o aparelho é todo seu. Você já pode desinstalar este aplicativo."
@@ -374,6 +376,10 @@ class MainActivity : Activity() {
             if (atrasadas.isNotEmpty()) append("\nTotal em atraso: ${Faturas.brl.format(atrasadas.sumOf { it.aPagar })} (com multa e juros)")
             if ((d.optDouble("descontoPct", 0.0)) > 0) append("\nPague antes do vencimento e ganhe ${d.optDouble("descontoPct").toInt()}% de desconto.")
         }
+        findViewById<View>(R.id.grpStatus).visibility = View.GONE
+        val hero = findViewById<LinearLayout>(R.id.heroPay); hero.visibility = View.VISIBLE
+        desenharHero(hero, d, fat, r.travar, prox, atrasadas)
+        desenharCalendario(findViewById(R.id.calParcelas), fat)
         Faturas.desenhar(this, lista, d)
         Faturas.quitacao(d)?.let { (valor, economia) ->
             if (economia > 0.01) lista.addView(android.widget.Button(this).apply {
@@ -454,6 +460,122 @@ class MainActivity : Activity() {
             "Selfie enviada. Aguarde a loja confirmar. Se pedirem, tire de novo."
             else "É necessário enviar uma selfie pelo app para a loja concluir a ativação do seu crédito."
         findViewById<Button>(R.id.btnSelfie).text = if (st.selfieEnviadaEm > 0) "Tirar outra selfie" else "Tirar selfie agora"
+    }
+
+    /* ---------- Device Tag: identificação do contrato (começa com N) ---------- */
+    private fun deviceTag(d: org.json.JSONObject): String {
+        val t = d.optString("deviceTag").trim()
+        return if (t.isNotEmpty()) t else "N%05d".format(d.optLong("vendaNumero"))
+    }
+    private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
+
+    /* ---------- card estilo PayJoy ---------- */
+    private fun txtH(t: CharSequence, size: Float, color: String, bold: Boolean = false, grav: Int = android.view.Gravity.CENTER, topM: Int = 0): TextView = TextView(this).apply {
+        text = t; textSize = size; setTextColor(android.graphics.Color.parseColor(color))
+        if (bold) setTypeface(typeface, android.graphics.Typeface.BOLD); gravity = grav
+        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = topM }
+    }
+    private fun barraProg(pct: Int): View {
+        val p = pct.coerceIn(0, 100)
+        val track = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(10)).apply { topMargin = dp(6) }
+            background = android.graphics.drawable.GradientDrawable().apply { cornerRadius = dp(6).toFloat(); setColor(android.graphics.Color.parseColor("#E7EBF3")) }
+        }
+        track.addView(View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, p.toFloat())
+            background = android.graphics.drawable.GradientDrawable().apply { cornerRadius = dp(6).toFloat(); setColor(android.graphics.Color.parseColor("#12875A")) }
+        })
+        track.addView(View(this).apply { layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, (100 - p).toFloat()) })
+        return track
+    }
+    private fun desenharHero(hero: LinearLayout, d: org.json.JSONObject, fat: List<Fatura>, travar: Boolean, prox: Fatura?, atrasadas: List<Fatura>) {
+        hero.removeAllViews()
+        val pagas = fat.count { it.pago }
+        val pct = if (fat.isNotEmpty()) pagas * 100 / fat.size else 0
+        hero.addView(txtH(if (travar) "● Dispositivo bloqueado" else "● Dispositivo desbloqueado", 13f, if (travar) "#C2410C" else "#12875A", true))
+        hero.addView(txtH("Tempo restante", 12f, "#8893A8", false, topM = 10))
+        val titulo = when {
+            prox == null -> "Tudo em dia"
+            atrasadas.isNotEmpty() -> "Em atraso há ${atrasadas.maxOf { it.diasAtraso }} dia(s)"
+            prox.diasParaVencer <= 0L -> "Vence hoje"
+            else -> "${prox.diasParaVencer} dia(s)"
+        }
+        hero.addView(txtH(titulo, 30f, "#0A1733", true))
+        if (prox != null) {
+            val valor = if (atrasadas.isNotEmpty()) atrasadas.sumOf { it.aPagar } else (if (prox.aPagar > 0.0) prox.aPagar else prox.valor)
+            hero.addView(txtH("Pagamento de ${Faturas.brl.format(valor)}", 16f, "#1B2130", true, topM = 10))
+            hero.addView(txtH("vence em ${prox.venc.format(Faturas.fmt)}", 14f, "#8893A8"))
+            hero.addView(Button(this).apply {
+                text = "Pagar com PIX"; isAllCaps = false; textSize = 16f
+                setTextColor(android.graphics.Color.WHITE); setTypeface(typeface, android.graphics.Typeface.BOLD)
+                setBackgroundResource(R.drawable.btn_verde)
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(52)).apply { topMargin = dp(14) }
+                setOnClickListener { Faturas.mostrarPix(this@MainActivity, d, valor, "Parcela ${prox.n} do contrato nº ${d.optLong("vendaNumero")}", "NXC${d.optLong("vendaNumero")}P${prox.n}", prox.n) }
+            })
+        } else {
+            hero.addView(txtH("Você não tem parcelas em aberto.", 15f, "#1B2130", false, topM = 10))
+        }
+        hero.addView(txtH("Progresso do pagamento: $pct%  ($pagas de ${fat.size})", 13f, "#1B2130", false, android.view.Gravity.START, dp(16)))
+        hero.addView(barraProg(pct))
+        hero.addView(TextView(this).apply {
+            text = "Ver detalhes da conta  ›"; textSize = 14f; setTextColor(android.graphics.Color.parseColor("#1D4ED8")); setTypeface(typeface, android.graphics.Typeface.BOLD)
+            gravity = android.view.Gravity.CENTER; setPadding(0, dp(6), 0, dp(6))
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(12) }
+            setOnClickListener { abrirUrl(portal(d)) }
+        })
+        hero.addView(View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1)).apply { topMargin = dp(14); bottomMargin = dp(10) }
+            setBackgroundColor(android.graphics.Color.parseColor("#E7EBF3"))
+        })
+        hero.addView(txtH("${d.optString("marca")} ${d.optString("modelo")} · Contrato nº ${d.optLong("vendaNumero")}", 12f, "#8893A8"))
+        hero.addView(txtH("Device Tag: ${deviceTag(d)}", 13f, "#0A1733", true, topM = 2))
+    }
+
+    /* ---------- calendário das parcelas ---------- */
+    private var calMes: java.time.YearMonth? = null
+    private fun celulaCal(txt: String, textColor: String, bgCor: String?, bold: Boolean): TextView = TextView(this).apply {
+        text = txt; gravity = android.view.Gravity.CENTER; textSize = 13f
+        setTextColor(android.graphics.Color.parseColor(if (bgCor != null) "#FFFFFF" else textColor))
+        if (bold) setTypeface(typeface, android.graphics.Typeface.BOLD)
+        layoutParams = android.widget.GridLayout.LayoutParams().apply {
+            width = 0; height = dp(38)
+            columnSpec = android.widget.GridLayout.spec(android.widget.GridLayout.UNDEFINED, 1f)
+            setMargins(dp(3), dp(3), dp(3), dp(3))
+        }
+        if (bgCor != null) background = android.graphics.drawable.GradientDrawable().apply { shape = android.graphics.drawable.GradientDrawable.OVAL; setColor(android.graphics.Color.parseColor(bgCor)) }
+    }
+    private fun desenharCalendario(cont: LinearLayout, fat: List<Fatura>) {
+        cont.removeAllViews()
+        if (fat.isEmpty()) return
+        val prox = fat.filter { !it.pago }.minByOrNull { it.venc }
+        val mes = calMes ?: java.time.YearMonth.from(prox?.venc ?: fat.first().venc)
+        calMes = mes
+        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = android.view.Gravity.CENTER_VERTICAL }
+        val mesNome = mes.month.getDisplayName(java.time.format.TextStyle.FULL, Locale("pt", "BR")).replaceFirstChar { it.uppercase() } + " " + mes.year
+        fun nav(t: String, delta: Long) = TextView(this).apply {
+            text = t; textSize = 22f; setTextColor(android.graphics.Color.parseColor("#1D4ED8")); setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setPadding(dp(16), dp(2), dp(16), dp(2)); setOnClickListener { calMes = mes.plusMonths(delta); desenharCalendario(cont, fat) }
+        }
+        header.addView(nav("‹", -1))
+        header.addView(TextView(this).apply { text = mesNome; textSize = 15f; setTextColor(android.graphics.Color.parseColor("#0A1733")); setTypeface(typeface, android.graphics.Typeface.BOLD); gravity = android.view.Gravity.CENTER; layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) })
+        header.addView(nav("›", 1))
+        cont.addView(header)
+        val grid = android.widget.GridLayout(this).apply { columnCount = 7; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(8) } }
+        listOf("D", "S", "T", "Q", "Q", "S", "S").forEach { grid.addView(celulaCal(it, "#8893A8", null, false)) }
+        val offset = mes.atDay(1).dayOfWeek.value % 7
+        for (i in 0 until offset) grid.addView(celulaCal("", "#000000", null, false))
+        val porDia = fat.filter { java.time.YearMonth.from(it.venc) == mes }.associateBy { it.venc.dayOfMonth }
+        for (dia in 1..mes.lengthOfMonth()) {
+            val f = porDia[dia]
+            val cor = when { f == null -> null; f.pago -> "#12875A"; f.diasAtraso > 0L -> "#C2410C"; else -> "#1D4ED8" }
+            grid.addView(celulaCal(dia.toString(), "#1B2130", cor, f != null))
+        }
+        cont.addView(grid)
+        val leg = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) } }
+        fun legItem(cor: String, t: String) = leg.addView(TextView(this).apply { text = "● $t"; textSize = 11f; setTextColor(android.graphics.Color.parseColor(cor)); setPadding(0, 0, dp(12), 0) })
+        legItem("#12875A", "Paga"); legItem("#1D4ED8", "A vencer"); legItem("#C2410C", "Em atraso")
+        cont.addView(leg)
     }
 
     private fun tirarSelfie() {

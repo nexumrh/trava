@@ -18,7 +18,12 @@
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
             android:paddingStart="20dp" android:paddingEnd="20dp" android:paddingBottom="24dp">
 
-            <!-- status -->
+            <!-- card estilo PayJoy (preenchido no código quando há contrato ativo) -->
+            <LinearLayout android:id="@+id/heroPay" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="16dp" android:orientation="vertical" android:background="@drawable/card_claro" android:padding="18dp" android:visibility="gone"/>
+
+            <!-- status (modo texto, quando não há contrato ativo) -->
+            <LinearLayout android:id="@+id/grpStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="14dp"
                 android:text="Status" android:textColor="#9FB0D0" android:textSize="12sp"/>
             <TextView android:id="@+id/tvSituacao" android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -28,6 +33,7 @@
             <TextView android:id="@+id/tvSaibaMais" android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:layout_marginTop="12dp" android:paddingTop="4dp" android:paddingBottom="4dp"
                 android:text="Saiba mais  ›" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold"/>
+            </LinearLayout>
 
             <!-- selfie pedida pela loja (ativação do crédito) -->
             <LinearLayout android:id="@+id/cardSelfie" android:layout_width="match_parent" android:layout_height="wrap_content"
@@ -80,7 +86,10 @@
                 <LinearLayout android:id="@+id/secContrato" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" android:visibility="gone"/>
                 <LinearLayout android:id="@+id/secSuporte" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" android:visibility="gone"/>
                 <LinearLayout android:id="@+id/secFaturas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Minhas faturas"
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Calendário das parcelas"
+                        android:textColor="#1B1A2E" android:textSize="17sp" android:textStyle="bold" android:layout_marginBottom="10dp"/>
+                    <LinearLayout android:id="@+id/calParcelas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="18dp"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Minhas parcelas"
                         android:textColor="#1B1A2E" android:textSize="17sp" android:textStyle="bold" android:layout_marginBottom="10dp"/>
                     <LinearLayout android:id="@+id/listaFaturas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/>
                     <Button android:id="@+id/btnAtualizar" android:layout_width="match_parent" android:layout_height="50dp"
