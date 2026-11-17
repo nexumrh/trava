@@ -37,6 +37,9 @@ class SuporteActivity : Activity() {
     private var atualizar: Runnable? = null
     private var bloqueado = false
     private var naoEntendeu = 0
+    /** Respostas que não resolveram e pedidos de atendente: o humano só entra em último caso. */
+    private var naoResolveu = 0
+    private var pediuAtendente = 0
     /** Histórico da conversa com a assistente, enviado ao atendente na transferência. */
     private val historico = mutableListOf<String>()
     private fun dp(x: Int) = (x * resources.displayMetrics.density).toInt()
@@ -48,10 +51,15 @@ class SuporteActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         bloqueado = intent.getBooleanExtra("bloqueado", false)
-        val raiz = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.parseColor("#F4F4F8")) }
+        val raiz = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.parseColor(Ui.FUNDO)) }
         raiz.addView(LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setBackgroundColor(Color.parseColor("#0A1733")); setPadding(dp(16), dp(14), dp(16), dp(14))
-            addView(TextView(context).apply { text = "‹"; textSize = 28f; setTextColor(Color.WHITE); setPadding(0, 0, dp(14), 0); setOnClickListener { finish() } })
+            addView(TextView(context).apply { text = "‹"; textSize = 28f; setTextColor(Color.WHITE); setPadding(0, 0, dp(12), 0); setOnClickListener { finish() } })
+            addView(TextView(context).apply {
+                text = "N"; textSize = 17f; typeface = Ui.NEGRITO; gravity = Gravity.CENTER; setTextColor(Color.parseColor(Ui.AZUL))
+                background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.WHITE) }
+                layoutParams = LinearLayout.LayoutParams(dp(38), dp(38)).apply { marginEnd = dp(12) }
+            })
             addView(LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
                 addView(TextView(context).apply { text = I18n.t("Suporte NexumCell"); textSize = 18f; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD) })
@@ -64,7 +72,7 @@ class SuporteActivity : Activity() {
 
         // perguntas rápidas (só com a assistente)
         val linha = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(8), dp(6), dp(8), dp(6)) }
-        listOf("Qual o valor da próxima parcela?", "Como pago com PIX?", "Quanto fica para quitar?", "Meu celular bloqueou, e agora?", "Falar com atendente")
+        listOf("Qual o valor da próxima parcela?", "Como pago com PIX?", "Paguei e não liberou", "Meu celular bloqueou, e agora?", "Quanto fica para quitar?", "Mudar dia do vencimento")
             .forEach { q -> linha.addView(chip(q) { enviar(q) }) }
         atalhos = HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false; addView(linha) }
         raiz.addView(atalhos)
@@ -96,19 +104,19 @@ class SuporteActivity : Activity() {
 
     /* ---------- modo assistente (sempre o primeiro atendimento) ---------- */
     private fun abrirAssistente() {
-        subtitulo.text = "Assistente virtual · atendente humano se precisar"
+        subtitulo.text = "● Assistente virtual · responde na hora"
         campo.hint = "Escreva sua dúvida"
         atalhos.visibility = View.VISIBLE
         linkModo.visibility = View.GONE
-        lista.removeAllViews(); historico.clear(); naoEntendeu = 0
+        lista.removeAllViews(); historico.clear(); naoEntendeu = 0; naoResolveu = 0; pediuAtendente = 0
         val oi = "Olá" + (if (nome().isNotEmpty()) ", ${nome()}" else "") + "! Sou a assistente virtual da NexumCell."
-        bolha(if (bloqueado) "$oi Vi que seu aparelho está bloqueado. Posso te mostrar o motivo e como liberar agora. Se eu não conseguir resolver, chamo um atendente da equipe."
-              else "$oi Posso te ajudar com parcelas, pagamento por PIX, quitação e bloqueio. Se eu não conseguir resolver, chamo um atendente da equipe.", false)
+        bolha(if (bloqueado) "$oi Vi que seu aparelho está bloqueado. Posso te mostrar o motivo e como liberar agora mesmo."
+              else "$oi Posso te ajudar com parcelas, pagamento por PIX, quitação, bloqueio e vencimento. Escolha um assunto abaixo ou escreva sua dúvida.", false)
     }
 
     /* ---------- modo atendente humano ---------- */
     private fun abrirHumano() {
-        subtitulo.text = "Atendimento com a equipe NexumCell"
+        subtitulo.text = "● Atendimento com a equipe NexumCell"
         campo.hint = I18n.t("Escreva para o Suporte NexumCell")
         atalhos.visibility = View.GONE
         linkModo.visibility = View.VISIBLE
@@ -128,7 +136,7 @@ class SuporteActivity : Activity() {
         Thread {
             val ok = try { Api(this).enviarSuporteMsg(resumo.take(3000), bloqueado, d); true } catch (e: Exception) { false }
             runOnUiThread {
-                if (!ok) { info("Não consegui chamar o atendente agora. Verifique a internet e toque de novo em Falar com atendente."); return@runOnUiThread }
+                if (!ok) { info("Não consegui chamar o atendente agora. Verifique a internet e toque de novo em Chamar atendente."); return@runOnUiThread }
                 st.suporteHumanoEm = System.currentTimeMillis()
                 abrirHumano()
             }
@@ -167,11 +175,40 @@ class SuporteActivity : Activity() {
         return tv
     }
 
-    /** Depois de cada resposta: o cliente diz se resolveu ou pede um atendente. */
+    /** Depois de cada resposta a assistente pergunta se resolveu. O atendente só é oferecido em último caso. */
     private fun opcoesDepois(pergunta: String) {
         val linha = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(8), 0, 0) }
-        linha.addView(chip("Resolveu") { linha.visibility = View.GONE; bolha("Que bom! Se precisar de mais alguma coisa, é só escrever aqui.", false) })
-        linha.addView(chip("Falar com atendente") { linha.visibility = View.GONE; transferir(pergunta) })
+        linha.addView(Ui.texto(this, "Isso resolveu?", 13f, Ui.TEXTO2).apply { setPadding(dp(4), dp(8), dp(10), 0) })
+        linha.addView(chip("Sim") { linha.visibility = View.GONE; naoResolveu = 0; bolha("Que bom! Se precisar de mais alguma coisa, é só escrever aqui.", false) })
+        linha.addView(chip("Não") { linha.visibility = View.GONE; naoResolveuCom(pergunta) })
+        lista.addView(linha)
+        rolar.post { rolar.fullScroll(ScrollView.FOCUS_DOWN) }
+    }
+
+    private fun naoResolveuCom(pergunta: String) {
+        naoResolveu++
+        historico.add("Cliente: não resolveu")
+        if (naoResolveu < 2) {
+            bolha("Vamos tentar de novo. Me explique com outras palavras o que está acontecendo, ou escolha um dos assuntos abaixo.", false)
+            temas()
+        } else oferecerAtendente(pergunta, "Desculpe por não ter conseguido resolver por aqui.")
+    }
+
+    /** Assuntos para o cliente escolher quando a primeira resposta não serviu. */
+    private fun temas() {
+        val linha = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, dp(6), dp(48), 0) }
+        listOf("Paguei e não liberou", "Meu celular bloqueou, e agora?", "Valor da próxima parcela", "Quanto fica para quitar?", "Mudar dia do vencimento").forEach { t ->
+            linha.addView(chip(t) { linha.visibility = View.GONE; enviar(t) }.apply { layoutParams = LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(6) } })
+        }
+        lista.addView(linha)
+        rolar.post { rolar.fullScroll(ScrollView.FOCUS_DOWN) }
+    }
+
+    private fun oferecerAtendente(pergunta: String, intro: String) {
+        bolha("$intro Posso chamar um atendente da equipe NexumCell para continuar com você. O atendimento humano pode levar alguns minutos.", false)
+        val linha = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(8), 0, 0) }
+        linha.addView(chip("Chamar atendente") { linha.visibility = View.GONE; transferir(pergunta) })
+        linha.addView(chip("Continuar com a assistente") { linha.visibility = View.GONE; naoResolveu = 0; bolha("Certo! Pode escrever sua dúvida.", false) })
         lista.addView(linha)
         rolar.post { rolar.fullScroll(ScrollView.FOCUS_DOWN) }
     }
@@ -183,6 +220,15 @@ class SuporteActivity : Activity() {
         if (humano) { enviarHumano(q); return }
         bolha(q, true); historico.add("Cliente: $q")
         val d = st.cache()
+        if (Assistente.querAtendente(q)) {
+            pediuAtendente++
+            // último caso: na primeira vez a assistente tenta resolver; se o cliente insistir, oferece o atendente
+            if (pediuAtendente == 1 && naoResolveu == 0) {
+                bolha("Consigo resolver a maioria dos casos na hora, sem espera. Me conta em poucas palavras o que aconteceu?", false)
+                temas()
+            } else oferecerAtendente(q, "Tudo bem.")
+            return
+        }
         val local = Assistente.responder(q, d)
         if (local != null) {
             bolha(local.texto, false); historico.add("Assistente: ${local.texto}")
@@ -203,12 +249,12 @@ class SuporteActivity : Activity() {
             runOnUiThread {
                 if (resp != null) {
                     espera.text = resp; historico.add("Assistente: $resp"); naoEntendeu = 0; opcoesDepois(q)
-                } else if (++naoEntendeu >= 2) {
-                    espera.text = "Não consegui entender bem. Vou te passar para um atendente da equipe."
-                    transferir(q)
+                } else if (++naoEntendeu >= 3) {
+                    espera.text = "Não consegui entender bem."
+                    oferecerAtendente(q, "")
                 } else {
-                    espera.text = "Não entendi direito. Pode escrever de outro jeito? Por exemplo: \"valor da próxima parcela\" ou \"como quitar\". Se preferir, toque em Falar com atendente."
-                    opcoesDepois(q)
+                    espera.text = "Não entendi direito. Pode escrever de outro jeito, ou escolher um dos assuntos abaixo."
+                    temas()
                 }
             }
         }.start()

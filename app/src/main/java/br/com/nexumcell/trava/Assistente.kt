@@ -25,7 +25,6 @@ object Assistente {
 
     fun responder(texto: String, d: JSONObject?): Resposta? {
         val q = norm(texto)
-        if (querAtendente(texto)) return Resposta("Certo, vou te passar para um atendente da equipe NexumCell.", true)
 
         if (tem(q, "roubad", "furtad", "perdi", "perdido", "assalt")) return Resposta(
             "Sinto muito pelo ocorrido. Esse caso precisa de um atendente: vou te passar agora para a equipe, " +
@@ -41,6 +40,19 @@ object Assistente {
             "Copie o código ou leia o QR no app do seu banco. Assim que o pagamento cai, o app atualiza sozinho."
 
         return when {
+            tem(q, "paguei", "ja pago", "nao liberou", "nao desbloqueou", "comprovante", "nao caiu", "nao baixou") -> Resposta(when {
+                atrasadas.isEmpty() && (prox == null || prox.diasParaVencer > 0) ->
+                    "Está tudo certo: não há nenhuma parcela em aberto vencida no seu contrato.\n\n" +
+                    "Se o aparelho ainda aparece bloqueado, conecte-se à internet e toque em Atualizar, na aba Parcelas. A liberação acontece em poucos minutos."
+                else -> {
+                    val alvo = atrasadas.minByOrNull { it.venc } ?: prox!!
+                    "Ainda não recebemos o pagamento da parcela ${alvo.n} (${brl(alvo.aPagar)}).\n\n" +
+                    "O PIX costuma ser confirmado em até 5 minutos. Para conferir agora:\n" +
+                    "1. Confirme que o aparelho está com internet.\n2. Na aba Parcelas, toque em Atualizar.\n\n" +
+                    "Se você pagou há mais de 30 minutos e continua igual, me responda \"Não resolveu\" que eu encaminho para a equipe conferir o comprovante."
+                }
+            })
+
             tem(q, "bloque", "travou", "travad", "trava", "nao liga", "desbloque", "liberar") -> Resposta(when {
                 atrasadas.isNotEmpty() -> {
                     val total = atrasadas.sumOf { it.aPagar }
@@ -50,7 +62,7 @@ object Assistente {
                 }
                 else -> "Não encontrei nenhuma parcela em atraso no seu contrato. Se o aparelho está bloqueado, o motivo mais comum é ter ficado muitos dias sem internet.\n\n" +
                     "1. Conecte no Wi-Fi ou nos dados móveis.\n2. Abra o app NexumCell e toque em Atualizar, na aba Parcelas.\n\n" +
-                    "Se você já pagou e continua bloqueado depois de alguns minutos, me diga \"falar com atendente\" que eu chamo a equipe."
+                    "Se você já pagou e continua bloqueado depois de alguns minutos, escreva \"paguei e não liberou\" que eu confiro com você."
             })
 
             tem(q, "quitar", "quitacao", "quito", "pagar tudo", "liquidar", "terminar de pagar", "saldo devedor") -> {
@@ -76,7 +88,7 @@ object Assistente {
 
             tem(q, "mudar", "trocar", "alterar") && tem(q, "venc", "dia") -> Resposta(
                 "Você pode mudar o dia de vencimento uma vez por contrato, pelo portal do cliente, na opção Mudar dia do vencimento. " +
-                "Se tiver dificuldade, me diga \"falar com atendente\".")
+                "Na aba Contrato do app há um atalho direto para essa opção.")
 
             tem(q, "proxima", "parcela", "valor", "quanto", "vencimento", "vence", "quando") -> Resposta(
                 if (prox == null) "Você não tem parcelas em aberto. Seu contrato está quitado."
@@ -111,6 +123,6 @@ object Assistente {
         .replace("**", "").replace("__", "")
         .replace(Regex("(?m)^#+\\s*"), "")
         .replace(Regex("(?m)^\\s*[*-]\\s+"), "• ")
-        .replace(Regex("[^.!?\\n]*[Ww]hats[Aa]pp[^.!?\\n]*[.!?]?"), "Se precisar, posso te passar para um atendente aqui mesmo.")
+        .replace(Regex("[^.!?\\n]*[Ww]hats[Aa]pp[^.!?\\n]*[.!?]?"), "")
         .trim()
 }
