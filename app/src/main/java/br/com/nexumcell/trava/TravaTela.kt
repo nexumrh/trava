@@ -105,7 +105,7 @@ object TravaTela {
             Toast.makeText(ctx, I18n.t("Verificando…"), Toast.LENGTH_SHORT).show()
             Thread { Sync.executar(ctx) }.start()
         })
-        col.addView(botao("Falar com o Suporte NexumCell", "#1E2C4F", "#FFFFFF") {
+        col.addView(botao("Pedir liberação ou falar com o suporte", "#1D4ED8", "#FFFFFF") {
             try { ctx.startActivity(android.content.Intent(ctx, SuporteActivity::class.java).putExtra("bloqueado", true).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e: Exception) { }
         })
         col.addView(botao("Emergência (190 / 192 / 193)", "#7A1F1F", "#FFFFFF") { discar(ctx, "") })
