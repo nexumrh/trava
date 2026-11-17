@@ -72,7 +72,7 @@ class SuporteActivity : Activity() {
 
         // perguntas rápidas (só com a assistente)
         val linha = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(dp(8), dp(6), dp(8), dp(6)) }
-        listOf("Qual o valor da próxima parcela?", "Como pago com PIX?", "Paguei e não liberou", "Meu celular bloqueou, e agora?", "Quanto fica para quitar?", "Mudar dia do vencimento")
+        (if (bloqueado) listOf("Liberar meu celular") else emptyList<String>()) + listOf("Preciso de mais prazo", "Qual o valor da próxima parcela?", "Como pago com PIX?", "Paguei e não liberou", "Meu celular bloqueou, e agora?", "Quanto fica para quitar?", "Mudar dia do vencimento")
             .forEach { q -> linha.addView(chip(q) { enviar(q) }) }
         atalhos = HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false; addView(linha) }
         raiz.addView(atalhos)
@@ -110,8 +110,14 @@ class SuporteActivity : Activity() {
         linkModo.visibility = View.GONE
         lista.removeAllViews(); historico.clear(); naoEntendeu = 0; naoResolveu = 0; pediuAtendente = 0
         val oi = "Olá" + (if (nome().isNotEmpty()) ", ${nome()}" else "") + "! Sou a assistente virtual da NexumCell."
-        bolha(if (bloqueado) "$oi Vi que seu aparelho está bloqueado. Posso te mostrar o motivo e como liberar agora mesmo."
-              else "$oi Posso te ajudar com parcelas, pagamento por PIX, quitação, bloqueio e vencimento. Escolha um assunto abaixo ou escreva sua dúvida.", false)
+        bolha(if (bloqueado) "$oi Vi que seu aparelho está bloqueado. Posso tentar liberar agora por 24 horas para você pagar com calma."
+              else "$oi Posso te ajudar com parcelas, pagamento por PIX, mais prazo para pagar, quitação e vencimento. Escolha um assunto abaixo ou escreva sua dúvida.", false)
+        if (bloqueado) {
+            val linha = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(8), 0, 0) }
+            linha.addView(chip("Liberar meu celular") { linha.visibility = View.GONE; enviar("Liberar meu celular") })
+            linha.addView(chip("Por que bloqueou?") { linha.visibility = View.GONE; enviar("Meu celular bloqueou, e agora?") })
+            lista.addView(linha)
+        }
     }
 
     /* ---------- modo atendente humano ---------- */
@@ -220,6 +226,9 @@ class SuporteActivity : Activity() {
         if (humano) { enviarHumano(q); return }
         bolha(q, true); historico.add("Cliente: $q")
         val d = st.cache()
+        val ql = q.lowercase()
+        if (Regex("liberar meu celular|desbloque|destrav|liberar o celular|liberar o aparelho|libera meu|liberação").containsMatchIn(ql) && (bloqueado || st.travado)) { pedirLiberacao(q); return }
+        if (Regex("mais prazo|prazo extra|mais tempo|prorrog|adiar|48 ?h|dois dias|2 dias|pagar depois|pagar mais tarde|atrasar").containsMatchIn(ql)) { pedirPrazo(); return }
         if (Assistente.querAtendente(q)) {
             pediuAtendente++
             // último caso: na primeira vez a assistente tenta resolver; se o cliente insistir, oferece o atendente
@@ -291,4 +300,77 @@ class SuporteActivity : Activity() {
             }
         }.start()
     }
+
+    /* ---------- prazo extra e liberação feitos pela assistente ---------- */
+    private fun servidor(): String = st.cache()?.optString("servidor").orEmpty().ifEmpty { st.cache()?.optString("servidorPix").orEmpty() }.ifEmpty { "https://nexumcell-servidor.wevellenerrera21.workers.dev" }.trimEnd('/')
+    private fun acaoCliente(acao: String, extra: JSONObject.() -> Unit = {}): Pair<Int, JSONObject> {
+        val c = URL("${servidor()}/api/cliente-app").openConnection() as HttpURLConnection
+        c.requestMethod = "POST"; c.connectTimeout = 15000; c.readTimeout = 25000; c.doOutput = true
+        c.setRequestProperty("Content-Type", "application/json")
+        val corpo = JSONObject().put("acao", acao).put("token", st.token).apply(extra)
+        c.outputStream.use { it.write(corpo.toString().toByteArray()) }
+        val code = c.responseCode
+        val txt = (if (code in 200..299) c.inputStream else c.errorStream)?.bufferedReader()?.readText().orEmpty()
+        return code to (try { JSONObject(txt) } catch (e: Exception) { JSONObject() })
+    }
+    private fun dataHora(ms: Long): String = java.text.SimpleDateFormat("dd/MM 'às' HH:mm", java.util.Locale("pt", "BR")).format(java.util.Date(ms))
+    private fun aplicarLiberacao(ate: Long) {
+        st.cache()?.let { c -> c.put("liberadoAte", maxOf(ate, c.optLong("liberadoAte", 0L))); st.cacheJson = c.toString() }
+        Thread { try { Sync.executar(this) } catch (e: Exception) { } }.start()
+    }
+
+    private fun pedirPrazo() {
+        historico.add("Assistente: ofereceu prazo extra")
+        bolha("Posso te dar até 48 horas a mais para pagar a parcela que está vencendo, sem bloquear o celular. Esse prazo extra vale 1 vez por parcela. Quer usar agora?", false)
+        val linha = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(8), 0, 0) }
+        linha.addView(chip("Sim, quero o prazo") { linha.visibility = View.GONE; bolha("Sim, quero o prazo", true); confirmarPrazo() })
+        linha.addView(chip("Agora não") { linha.visibility = View.GONE; bolha("Tudo bem! Se precisar, é só pedir aqui.", false) })
+        lista.addView(linha); rolar.post { rolar.fullScroll(ScrollView.FOCUS_DOWN) }
+    }
+    private fun confirmarPrazo() {
+        val espera = bolha("Um momento…", false)
+        Thread {
+            val r = try { acaoCliente("prazo") } catch (e: Exception) { null }
+            runOnUiThread {
+                if (r == null) { espera.text = "Estou sem internet agora. Conecte no Wi-Fi ou nos dados e peça de novo."; return@runOnUiThread }
+                val (code, j) = r
+                if (code in 200..299 && j.optBoolean("ok")) {
+                    val ate = j.optLong("liberadoAte"); aplicarLiberacao(ate)
+                    espera.text = "Pronto! A parcela ${j.optInt("parcela")} ganhou ${j.optInt("horas", 48)} horas a mais. Seu celular não será bloqueado até ${dataHora(ate)}. Se o pagamento não cair até lá, ele volta a bloquear. Você pode pagar pelo PIX na aba Parcelas."
+                    historico.add("Assistente: deu prazo extra até ${dataHora(ate)}")
+                } else {
+                    espera.text = j.optString("erro").ifEmpty { "Não consegui dar o prazo agora. Tente de novo em alguns minutos." }
+                    opcoesDepois("Preciso de mais prazo")
+                }
+            }
+        }.start()
+    }
+
+    private fun pedirLiberacao(pedido: String) {
+        val espera = bolha("Vou verificar seu contrato…", false)
+        Thread {
+            val r = try { acaoCliente("liberar") { put("pedido", pedido.take(300)) } } catch (e: Exception) { null }
+            runOnUiThread {
+                if (r == null) { espera.text = "Estou sem internet agora. Conecte no Wi-Fi ou nos dados e peça de novo. Sem internet, a loja pode passar um código de liberação."; return@runOnUiThread }
+                val (code, j) = r
+                when {
+                    code in 200..299 && j.optBoolean("ok") -> {
+                        val ate = j.optLong("liberadoAte"); aplicarLiberacao(ate)
+                        espera.text = if (j.optBoolean("jaLiberado")) "Seu celular já está liberado até ${dataHora(ate)}. Se a tela de bloqueio ainda aparecer, toque em Verificar."
+                            else "Liberei seu celular por 24 horas, até ${dataHora(ate)}. A parcela continua em atraso: pague pelo PIX na aba Parcelas para não bloquear de novo."
+                        historico.add("Assistente: liberou 24 h")
+                    }
+                    code in 200..299 && j.optBoolean("pendente") -> {
+                        espera.text = "Não consegui liberar automaticamente pelo seu histórico de pagamentos. Enviei seu pedido para a equipe NexumCell, que pode liberar por 24 ou 48 horas. Assim que decidirem, o celular destrava sozinho. Pagando pelo PIX, ele libera na hora."
+                        historico.add("Assistente: pedido de liberação enviado ao suporte")
+                    }
+                    else -> {
+                        espera.text = j.optString("erro").ifEmpty { "Não consegui verificar agora. Tente de novo em alguns minutos." }
+                        if (code == 409) oferecerAtendente(pedido, "") else opcoesDepois(pedido)
+                    }
+                }
+            }
+        }.start()
+    }
+
 }

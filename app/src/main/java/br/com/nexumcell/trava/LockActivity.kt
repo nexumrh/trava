@@ -113,9 +113,10 @@ class LockActivity : Activity() {
     private fun atualizarConfianca() {
         val st = Store(this); val d = st.cache()
         val ok = d != null && Decisao.podeConfianca(d) && st.motivo.contains("atraso")
-        findViewById<Button>(R.id.btnConfianca).visibility = if (ok) View.VISIBLE else View.GONE
+        // liberação e prazo agora são pedidos no chat da assistente (Falar com o suporte)
+        findViewById<Button>(R.id.btnConfianca).visibility = View.GONE
         val podePromessa = d != null && d.optInt("promessaMaxDias", 0) > 0 && d.optJSONObject("promessaApp") == null && st.motivo.contains("atraso")
-        findViewById<Button>(R.id.btnPromessa).visibility = if (podePromessa) View.VISIBLE else View.GONE
+        findViewById<Button>(R.id.btnPromessa).visibility = View.GONE
     }
 
     /** O cliente escolhe o dia em que vai pagar; o servidor libera o aparelho até lá (uma vez por contrato). */
