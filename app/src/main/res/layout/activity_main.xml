@@ -1,111 +1,114 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- App do cliente: status, dica, acesso rápido, faturas/contrato/suporte e navegação embaixo. -->
+<!-- App do cliente NexumCell: topo azul, cartão do contrato sobreposto, abas e navegação branca embaixo. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:background="@drawable/fundo_app">
+    android:orientation="vertical" android:background="#F3F5FA">
 
-    <!-- barra do topo -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:orientation="horizontal"
-        android:gravity="center_vertical" android:paddingStart="16dp" android:paddingEnd="8dp">
-        <ImageView android:layout_width="30dp" android:layout_height="30dp" android:src="@drawable/logo_n" android:contentDescription="@string/app_name"/>
-        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center"
-            android:text="NEXUMCELL" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold" android:letterSpacing="0.12"/>
-        <ImageButton android:id="@+id/btnSino" android:layout_width="44dp" android:layout_height="44dp"
-            android:background="@android:color/transparent" android:src="@drawable/ic_sino" android:contentDescription="Avisos"/>
-    </LinearLayout>
+    <ScrollView android:id="@+id/rolagem" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+        android:fillViewport="true" android:overScrollMode="never">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingBottom="28dp">
 
-    <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
-            android:paddingStart="20dp" android:paddingEnd="20dp" android:paddingBottom="24dp">
+            <!-- topo -->
+            <LinearLayout android:id="@+id/topo" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:background="@drawable/topo_fundo"
+                android:paddingStart="20dp" android:paddingEnd="12dp" android:paddingTop="10dp" android:paddingBottom="76dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="52dp" android:orientation="horizontal" android:gravity="center_vertical">
+                    <ImageView android:layout_width="32dp" android:layout_height="32dp" android:src="@drawable/logo_n" android:contentDescription="@string/app_name"/>
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="10dp"
+                        android:text="NexumCell" android:textColor="#FFFFFF" android:textSize="18sp" android:fontFamily="sans-serif-medium" android:letterSpacing="0.02"/>
+                    <ImageButton android:id="@+id/btnSino" android:layout_width="44dp" android:layout_height="44dp"
+                        android:background="?android:attr/selectableItemBackgroundBorderless" android:src="@drawable/ic_sino" android:contentDescription="Avisos"/>
+                </LinearLayout>
+                <TextView android:id="@+id/tvOla" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp"
+                    android:text="Olá!" android:textColor="#FFFFFF" android:textSize="24sp" android:textStyle="bold"/>
+                <TextView android:id="@+id/tvSubOla" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp"
+                    android:text="Acompanhe seu financiamento" android:textColor="#C7D5F5" android:textSize="14sp"/>
+            </LinearLayout>
 
             <!-- tela inicial: some nas outras abas -->
-            <LinearLayout android:id="@+id/blocoInicio" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-            <!-- card estilo PayJoy (preenchido no código quando há contrato ativo) -->
-            <LinearLayout android:id="@+id/heroPay" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="16dp" android:orientation="vertical" android:background="@drawable/card_claro" android:padding="18dp" android:visibility="gone"/>
+            <LinearLayout android:id="@+id/blocoInicio" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:layout_marginTop="-60dp" android:paddingStart="16dp" android:paddingEnd="16dp">
 
-            <!-- status (modo texto, quando não há contrato ativo) -->
-            <LinearLayout android:id="@+id/grpStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="14dp"
-                android:text="Status" android:textColor="#9FB0D0" android:textSize="12sp"/>
-            <TextView android:id="@+id/tvSituacao" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="2dp" android:textColor="#FFFFFF" android:textSize="27sp" android:textStyle="bold"/>
-            <TextView android:id="@+id/tvStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="6dp" android:textColor="#D5DDF0" android:textSize="15sp" android:lineSpacingExtra="3dp"/>
-            <TextView android:id="@+id/tvSaibaMais" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:layout_marginTop="12dp" android:paddingTop="4dp" android:paddingBottom="4dp"
-                android:text="Saiba mais  ›" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold"/>
+                <!-- cartão do contrato (preenchido no código) -->
+                <LinearLayout android:id="@+id/heroPay" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:background="@drawable/card_branco" android:elevation="4dp" android:padding="20dp" android:visibility="gone"/>
+
+                <!-- situação (quando ainda não há contrato ativo) -->
+                <LinearLayout android:id="@+id/grpStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:background="@drawable/card_branco" android:elevation="4dp" android:padding="20dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Situação" android:textColor="#94A3B8" android:textSize="12sp"/>
+                    <TextView android:id="@+id/tvSituacao" android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp" android:textColor="#0F172A" android:textSize="22sp" android:textStyle="bold"/>
+                    <TextView android:id="@+id/tvStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp" android:textColor="#475569" android:textSize="14sp" android:lineSpacingExtra="3dp"/>
+                    <TextView android:id="@+id/tvSaibaMais" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp" android:paddingTop="4dp" android:paddingBottom="4dp"
+                        android:text="Ver contrato  ›" android:textColor="#1D4ED8" android:textSize="14sp" android:fontFamily="sans-serif-medium"/>
+                </LinearLayout>
+
+                <!-- acesso rápido -->
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="24dp"
+                    android:text="Acesso rápido" android:textColor="#0F172A" android:textSize="17sp" android:textStyle="bold"/>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:orientation="horizontal">
+                    <LinearLayout android:id="@+id/qaApps" style="@style/Atalho">
+                        <ImageView style="@style/AtalhoIcone" android:src="@drawable/ic_apps" android:contentDescription="Aplicativos permitidos"/>
+                        <TextView style="@style/AtalhoTexto" android:text="Apps\npermitidos"/>
+                    </LinearLayout>
+                    <LinearLayout android:id="@+id/qaContato" style="@style/Atalho">
+                        <ImageView style="@style/AtalhoIcone" android:src="@drawable/ic_contato" android:contentDescription="Suporte"/>
+                        <TextView style="@style/AtalhoTexto" android:text="Falar com\no suporte"/>
+                    </LinearLayout>
+                    <LinearLayout android:id="@+id/qaEmergencia" style="@style/Atalho">
+                        <ImageView style="@style/AtalhoIcone" android:src="@drawable/ic_tel_escuro" android:contentDescription="Emergência"/>
+                        <TextView style="@style/AtalhoTexto" android:text="Ligação de\nemergência"/>
+                    </LinearLayout>
+                    <LinearLayout android:id="@+id/qaConfig" style="@style/Atalho">
+                        <ImageView style="@style/AtalhoIcone" android:src="@drawable/ic_config" android:contentDescription="Configurações"/>
+                        <TextView style="@style/AtalhoTexto" android:text="Configurações"/>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- aviso -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp"
+                    android:orientation="horizontal" android:background="@drawable/card_branco" android:padding="16dp" android:gravity="top">
+                    <ImageView android:layout_width="36dp" android:layout_height="36dp" android:background="@drawable/circulo_azul_claro"
+                        android:padding="8dp" android:src="@drawable/ic_info" android:contentDescription="Aviso"/>
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="12dp" android:orientation="vertical">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Mantenha o aparelho conectado"
+                            android:textColor="#0F172A" android:textSize="15sp" android:fontFamily="sans-serif-medium"/>
+                        <TextView android:id="@+id/tvDica" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp"
+                            android:textColor="#475569" android:textSize="13sp" android:lineSpacingExtra="2dp"
+                            android:text="Se ficar muito tempo sem internet, o aparelho bloqueia por segurança. É só conectar para voltar ao normal."/>
+                    </LinearLayout>
+                </LinearLayout>
             </LinearLayout>
 
-            <!-- visão geral -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="26dp"
-                android:text="Visão geral" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold"/>
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp"
-                android:orientation="vertical" android:background="@drawable/card_dica" android:padding="16dp">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:drawableStart="@drawable/ic_lampada" android:drawablePadding="8dp"
-                    android:gravity="center_vertical" android:text="Você sabia?" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold"/>
-                <TextView android:id="@+id/tvDica" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp"
-                    android:textColor="#E6EEFF" android:textSize="14sp" android:lineSpacingExtra="2dp"
-                    android:text="Se ficar muito tempo desconectado, o aparelho trava sozinho. Reconecte-se ou entre em contato com a loja para recuperar o acesso."/>
-            </LinearLayout>
-
-            <!-- acesso rápido -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="26dp"
-                android:text="Acesso rápido" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold"/>
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:orientation="horizontal">
-                <LinearLayout android:id="@+id/qaApps" style="@style/Atalho">
-                    <ImageView android:layout_width="58dp" android:layout_height="58dp" android:background="@drawable/circulo_ciano" android:padding="16dp" android:src="@drawable/ic_apps" android:contentDescription="Aplicativos permitidos"/>
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:gravity="center" android:text="Aplicativos\npermitidos" android:textColor="#FFFFFF" android:textSize="12sp"/>
-                </LinearLayout>
-                <LinearLayout android:id="@+id/qaContato" style="@style/Atalho">
-                    <ImageView android:layout_width="58dp" android:layout_height="58dp" android:background="@drawable/circulo_ciano" android:padding="16dp" android:src="@drawable/ic_contato" android:contentDescription="Informações de contato"/>
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:gravity="center" android:text="Informações\nde contato" android:textColor="#FFFFFF" android:textSize="12sp"/>
-                </LinearLayout>
-                <LinearLayout android:id="@+id/qaEmergencia" style="@style/Atalho">
-                    <ImageView android:layout_width="58dp" android:layout_height="58dp" android:background="@drawable/circulo_ciano" android:padding="16dp" android:src="@drawable/ic_tel_escuro" android:contentDescription="Chamada de emergência"/>
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:gravity="center" android:text="Chamada de\nemergência" android:textColor="#FFFFFF" android:textSize="12sp"/>
-                </LinearLayout>
-                <LinearLayout android:id="@+id/qaConfig" style="@style/Atalho">
-                    <ImageView android:layout_width="58dp" android:layout_height="58dp" android:background="@drawable/circulo_ciano" android:padding="16dp" android:src="@drawable/ic_config" android:contentDescription="Configurações do dispositivo"/>
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:gravity="center" android:text="Configurações\ndo dispositivo" android:textColor="#FFFFFF" android:textSize="12sp"/>
-                </LinearLayout>
-            </LinearLayout>
-            </LinearLayout>
-
-            <!-- conteúdo das abas (cartão claro) -->
-            <LinearLayout android:id="@+id/cardAbas" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="26dp"
-                android:orientation="vertical" android:background="@drawable/card_app">
-                <LinearLayout android:id="@+id/secContrato" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" android:visibility="gone"/>
-                <LinearLayout android:id="@+id/secSuporte" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" android:visibility="gone"/>
-                <LinearLayout android:id="@+id/secFaturas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+            <!-- conteúdo das abas -->
+            <LinearLayout android:id="@+id/cardAbas" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:paddingStart="16dp" android:paddingEnd="16dp">
+                <LinearLayout android:id="@+id/secContrato" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone"/>
+                <LinearLayout android:id="@+id/secSuporte" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone"/>
+                <LinearLayout android:id="@+id/secFaturas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
                     <LinearLayout android:id="@+id/blocoParcelas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Calendário das parcelas"
-                        android:textColor="#1B1A2E" android:textSize="17sp" android:textStyle="bold" android:layout_marginBottom="10dp"/>
-                    <LinearLayout android:id="@+id/calParcelas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="18dp"/>
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Minhas parcelas"
-                        android:textColor="#1B1A2E" android:textSize="17sp" android:textStyle="bold" android:layout_marginBottom="10dp"/>
-                    <LinearLayout android:id="@+id/listaFaturas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/>
+                        <LinearLayout android:id="@+id/calParcelas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/>
+                        <LinearLayout android:id="@+id/listaFaturas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/>
                     </LinearLayout>
                     <Button android:id="@+id/btnAtualizar" android:layout_width="match_parent" android:layout_height="50dp"
-                        android:layout_marginTop="6dp" android:background="@drawable/btn_outline_claro"
-                        android:text="Atualizar" android:textAllCaps="false" android:textColor="#0A1733"/>
+                        android:layout_marginTop="16dp" android:background="@drawable/btn_secundario" android:stateListAnimator="@null"
+                        android:text="Atualizar" android:textAllCaps="false" android:textColor="#1D4ED8" android:textSize="15sp" android:fontFamily="sans-serif-medium"/>
                     <TextView android:id="@+id/tvRodape" android:layout_width="match_parent" android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp" android:gravity="center" android:textColor="#696784" android:textSize="12sp"/>
+                        android:layout_marginTop="12dp" android:gravity="center" android:textColor="#94A3B8" android:textSize="12sp" android:lineSpacingExtra="2dp"/>
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
 
     <!-- navegação -->
-    <LinearLayout android:id="@+id/abas" android:layout_width="match_parent" android:layout_height="72dp" android:orientation="horizontal"
-        android:background="@drawable/nav_fundo" android:gravity="center_vertical" android:paddingStart="6dp" android:paddingEnd="6dp">
-        <TextView android:id="@+id/abaFaturas" android:layout_width="0dp" android:layout_height="56dp" android:layout_weight="1" android:layout_marginStart="3dp" android:layout_marginEnd="3dp"
-            android:gravity="center" android:drawableTop="@drawable/ic_casa" android:paddingTop="6dp" android:text="Tela inicial" android:textSize="12sp" android:textColor="#FFFFFF"/>
-        <TextView android:id="@+id/abaParcelas" android:layout_width="0dp" android:layout_height="56dp" android:layout_weight="1" android:layout_marginStart="3dp" android:layout_marginEnd="3dp"
-            android:gravity="center" android:drawableTop="@drawable/ic_cal_nav" android:paddingTop="6dp" android:text="Parcelas" android:textSize="12sp" android:textColor="#9FB0D0"/>
-        <TextView android:id="@+id/abaContrato" android:layout_width="0dp" android:layout_height="56dp" android:layout_weight="1" android:layout_marginStart="3dp" android:layout_marginEnd="3dp"
-            android:gravity="center" android:drawableTop="@drawable/ic_doc" android:paddingTop="6dp" android:text="Contrato" android:textSize="12sp" android:textColor="#9FB0D0"/>
-        <TextView android:id="@+id/abaSuporte" android:layout_width="0dp" android:layout_height="56dp" android:layout_weight="1" android:layout_marginStart="3dp" android:layout_marginEnd="3dp"
-            android:gravity="center" android:drawableTop="@drawable/ic_suporte" android:paddingTop="6dp" android:text="Suporte" android:textSize="12sp" android:textColor="#9FB0D0"/>
+    <LinearLayout android:id="@+id/abas" android:layout_width="match_parent" android:layout_height="68dp" android:orientation="horizontal"
+        android:background="@drawable/nav_branco" android:gravity="center_vertical" android:paddingStart="8dp" android:paddingEnd="8dp" android:elevation="8dp">
+        <TextView android:id="@+id/abaFaturas" style="@style/Aba" android:drawableTop="@drawable/ic_casa" android:text="Início"/>
+        <TextView android:id="@+id/abaParcelas" style="@style/Aba" android:drawableTop="@drawable/ic_cal_nav" android:text="Parcelas"/>
+        <TextView android:id="@+id/abaContrato" style="@style/Aba" android:drawableTop="@drawable/ic_doc" android:text="Contrato"/>
+        <TextView android:id="@+id/abaSuporte" style="@style/Aba" android:drawableTop="@drawable/ic_suporte" android:text="Suporte"/>
     </LinearLayout>
 </LinearLayout>

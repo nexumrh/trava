@@ -7,6 +7,7 @@ import android.content.ClipboardManager
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.view.Gravity
+import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -144,82 +145,124 @@ object Faturas {
         dialogo(a, codigo, valor, descricao, false)
     }
 
+    /** Tela de pagamento PIX em painel inferior: valor, QR, código e botão de copiar. */
     private fun dialogo(a: Activity, codigo: String, valor: Double, descricao: String, automatico: Boolean) {
         if (a.isFinishing) return
-        val dp = a.resources.displayMetrics.density
-        val box = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding((20 * dp).toInt(), (12 * dp).toInt(), (20 * dp).toInt(), 0) }
-        box.addView(TextView(a).apply { text = "${brl.format(valor)}\n$descricao"; gravity = Gravity.CENTER; textSize = 16f; setTextColor(Color.parseColor("#0A1733")) })
-        box.addView(ImageView(a).apply { setImageBitmap(qr(codigo)); layoutParams = LinearLayout.LayoutParams((230 * dp).toInt(), (230 * dp).toInt()).apply { topMargin = (10 * dp).toInt() } })
-        box.addView(TextView(a).apply { text = codigo; textSize = 11f; setTextIsSelectable(true); setTextColor(Color.parseColor("#696784")); setPadding(0, (8 * dp).toInt(), 0, 0) })
-        box.addView(TextView(a).apply {
-            text = I18n.t(if (automatico) "O pagamento é confirmado sozinho. Em poucos minutos a parcela aparece como paga e o aparelho é liberado."
-                   else "Depois de pagar, envie o comprovante para a loja. Assim que o pagamento for confirmado, o aparelho é liberado automaticamente.")
-            textSize = 13f; setTextColor(Color.parseColor("#1B1A2E")); setPadding(0, (10 * dp).toInt(), 0, 0)
-        })
-        AlertDialog.Builder(a).setTitle(I18n.t("Pagar com PIX")).setView(box)
-            .setPositiveButton(I18n.t("Copiar código PIX")) { _, _ ->
-                a.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("PIX", codigo))
-                Toast.makeText(a, I18n.t("Código PIX copiado. Cole no app do seu banco."), Toast.LENGTH_LONG).show()
+        fun dp(v: Int) = Ui.dp(a, v)
+        val dlg = android.app.Dialog(a)
+        val box = LinearLayout(a).apply {
+            orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(22), dp(10), dp(22), dp(22))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.WHITE); val r = Ui.dpf(a, 24); cornerRadii = floatArrayOf(r, r, r, r, 0f, 0f, 0f, 0f)
             }
-            .setNegativeButton(I18n.t("Fechar"), null).show()
+        }
+        box.addView(android.view.View(a).apply { background = Ui.forma(a, "#D6DDEB", 3); layoutParams = LinearLayout.LayoutParams(dp(40), dp(5)) })
+        box.addView(Ui.iconeCirculo(a, R.drawable.ic_pix, "#0E9F8F", "#E6F6F4", 48).apply { (layoutParams as LinearLayout.LayoutParams).topMargin = dp(16) })
+        box.addView(Ui.texto(a, I18n.t("Pagar com PIX"), 14f, Ui.TEXTO2, grav = Gravity.CENTER).apply { layoutParams = Ui.lp(topo = dp(10)) })
+        box.addView(Ui.texto(a, brl.format(valor), 30f, Ui.TEXTO, Ui.NEGRITO, Gravity.CENTER).apply { layoutParams = Ui.lp(topo = dp(4)) })
+        box.addView(Ui.texto(a, descricao, 13f, Ui.MUDO, grav = Gravity.CENTER).apply { layoutParams = Ui.lp(topo = dp(4)) })
+        box.addView(LinearLayout(a).apply {
+            gravity = Gravity.CENTER; background = Ui.forma(a, "#FFFFFF", 16, Ui.BORDA); setPadding(dp(10), dp(10), dp(10), dp(10))
+            layoutParams = LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(16) }
+            addView(ImageView(a).apply { setImageBitmap(qr(codigo)); layoutParams = LinearLayout.LayoutParams(dp(200), dp(200)) })
+        })
+        box.addView(Ui.texto(a, codigo, 11f, Ui.MUDO, grav = Gravity.CENTER).apply {
+            maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.MIDDLE; layoutParams = Ui.lp(topo = dp(12)) })
+        box.addView(Ui.botao(a, I18n.t("Copiar código PIX"), Ui.VERDE, alt = 54) {
+            a.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("PIX", codigo))
+            Toast.makeText(a, I18n.t("Código PIX copiado. Cole no app do seu banco."), Toast.LENGTH_LONG).show()
+            dlg.dismiss()
+        }.apply { (layoutParams as LinearLayout.LayoutParams).topMargin = dp(18) })
+        box.addView(Ui.texto(a, I18n.t(if (automatico) "O pagamento é confirmado sozinho. Em poucos minutos a parcela aparece como paga e o aparelho é liberado."
+                   else "Depois de pagar, envie o comprovante para a loja. Assim que o pagamento for confirmado, o aparelho é liberado automaticamente."), 12f, Ui.TEXTO2, grav = Gravity.CENTER).apply { layoutParams = Ui.lp(topo = dp(12)) })
+        box.addView(Ui.texto(a, I18n.t("Fechar"), 14f, Ui.AZUL, Ui.MEDIO, Gravity.CENTER).apply { setPadding(0, dp(14), 0, dp(4)); setOnClickListener { dlg.dismiss() } })
+        dlg.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE)
+        dlg.setContentView(android.widget.ScrollView(a).apply { addView(box) })
+        dlg.window?.apply {
+            setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Color.TRANSPARENT))
+            setLayout(android.view.WindowManager.LayoutParams.MATCH_PARENT, android.view.WindowManager.LayoutParams.WRAP_CONTENT)
+            setGravity(Gravity.BOTTOM)
+        }
+        dlg.show()
     }
 
-    /** Monta os cartões das faturas dentro de um LinearLayout. */
+    /** Monta a lista de parcelas: linha compacta por parcela; a próxima e as atrasadas já mostram os botões de pagamento. */
     fun desenhar(a: Activity, alvo: LinearLayout, d: JSONObject) {
         alvo.removeAllViews()
-        val dp = a.resources.displayMetrics.density
+        fun dp(v: Int) = Ui.dp(a, v)
         val num = d.optLong("vendaNumero")
         // Score NexumCell: o cliente vê a nota subir pagando em dia
         d.optJSONObject("score")?.let { sc ->
             val prox = sc.optJSONObject("proxima")
-            alvo.addView(LinearLayout(a).apply {
-                orientation = LinearLayout.VERTICAL; setBackgroundResource(R.drawable.card_claro)
-                setPadding((16 * dp).toInt(), (14 * dp).toInt(), (16 * dp).toInt(), (14 * dp).toInt())
-                layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = (12 * dp).toInt() }
-                addView(TextView(a).apply { text = I18n.t("Seu score NexumCell"); textSize = 13f; setTextColor(Color.parseColor("#696784")) })
-                addView(TextView(a).apply { text = "${sc.optInt("valor")}  ·  ${sc.optString("faixa")}"; textSize = 24f; setTypeface(typeface, android.graphics.Typeface.BOLD); setTextColor(Color.parseColor("#1F5FE8")) })
-                addView(android.widget.ProgressBar(a, null, android.R.attr.progressBarStyleHorizontal).apply { max = 1000; progress = sc.optInt("valor"); layoutParams = LinearLayout.LayoutParams(-1, (10 * dp).toInt()).apply { topMargin = (6 * dp).toInt() } })
-                addView(TextView(a).apply { textSize = 13f; setTextColor(Color.parseColor("#14203D")); setPadding(0, (6 * dp).toInt(), 0, 0)
-                    text = if (prox != null) "${I18n.t("Faltam")} ${prox.optInt("falta")} ${I18n.t("pontos para")} ${prox.optString("faixa")}. ${I18n.t("Pague em dia para subir e ganhar limite maior.")}" else I18n.t("Nível máximo! Você tem as melhores condições.") })
+            alvo.addView(Ui.cartao(a).apply {
+                addView(LinearLayout(a).apply {
+                    orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+                    addView(LinearLayout(a).apply {
+                        orientation = LinearLayout.VERTICAL
+                        addView(Ui.texto(a, I18n.t("Seu score NexumCell"), 13f, Ui.TEXTO2))
+                        addView(Ui.texto(a, "${sc.optInt("valor")}", 26f, Ui.AZUL, Ui.NEGRITO).apply { layoutParams = Ui.lp(topo = dp(4)) })
+                    }, LinearLayout.LayoutParams(0, -2, 1f))
+                    addView(Ui.chip(a, sc.optString("faixa"), Ui.AZUL, Ui.AZUL_CLARO, false))
+                })
+                addView(Ui.barra(a, sc.optInt("valor") / 10, Ui.AZUL))
+                addView(Ui.texto(a, if (prox != null) "${I18n.t("Faltam")} ${prox.optInt("falta")} ${I18n.t("pontos para")} ${prox.optString("faixa")}. ${I18n.t("Pague em dia para subir e ganhar limite maior.")}" else I18n.t("Nível máximo! Você tem as melhores condições."), 13f, Ui.TEXTO2).apply { layoutParams = Ui.lp(topo = dp(10)) })
             })
         }
-        for (f in lista(d)) {
-            val card = LinearLayout(a).apply {
-                orientation = LinearLayout.VERTICAL
-                setBackgroundResource(R.drawable.card_claro)
-                setPadding((16 * dp).toInt(), (14 * dp).toInt(), (16 * dp).toInt(), (14 * dp).toInt())
-                layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = (10 * dp).toInt() }
+        val todas = lista(d)
+        val proxN = todas.filter { !it.pago }.minByOrNull { it.venc }?.n
+        val card = Ui.cartao(a, 4)
+        todas.forEachIndexed { i, f ->
+            if (i > 0) card.addView(Ui.divisor(a, 0, 0))
+            val (rotulo, cor, fundo) = when {
+                f.pago -> Triple("Paga", Ui.VERDE, Ui.VERDE_CLARO)
+                f.diasAtraso > 0 -> Triple("Atrasada há ${f.diasAtraso} ${if (f.diasAtraso == 1L) "dia" else "dias"}", Ui.VERMELHO, Ui.VERMELHO_CLARO)
+                f.diasParaVencer == 0L -> Triple("Vence hoje", Ui.LARANJA, Ui.LARANJA_CLARO)
+                else -> Triple("Em ${f.diasParaVencer} ${if (f.diasParaVencer == 1L) "dia" else "dias"}", Ui.AZUL, Ui.AZUL_CLARO)
             }
-            val (rotulo, cor) = when {
-                f.pago -> "Paga" to "#0E8A5F"
-                f.diasAtraso > 0 -> "Atrasada há ${f.diasAtraso} dia(s)" to "#C23B3B"
-                f.diasParaVencer == 0L -> "Vence hoje" to "#A86A12"
-                else -> "Vence em ${f.diasParaVencer} dia(s)" to "#1A5CFF"
-            }
-            card.addView(TextView(a).apply { text = "Parcela ${f.n} de ${f.total}  ·  $rotulo"; textSize = 13f; setTextColor(Color.parseColor(cor)) })
-            card.addView(TextView(a).apply { text = "Vencimento ${f.venc.format(fmt)}"; textSize = 14f; setTextColor(Color.parseColor("#696784")) })
-            card.addView(TextView(a).apply {
-                text = when {
-                    f.pago -> brl.format(f.valor)
-                    f.desconto > 0 -> "${brl.format(f.aPagar)}  (com ${brl.format(f.desconto)} de desconto pagando antes do vencimento)"
-                    f.encargos > 0 -> "${brl.format(f.aPagar)}  (inclui ${brl.format(f.encargos)} de multa e juros)"
-                    else -> brl.format(f.aPagar)
+            val bloco = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(14), dp(14), dp(14), dp(14)) }
+            bloco.addView(LinearLayout(a).apply {
+                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+                addView(TextView(a).apply {
+                    text = "${f.n}"; textSize = 14f; typeface = Ui.MEDIO; gravity = Gravity.CENTER; setTextColor(Color.parseColor(cor))
+                    background = android.graphics.drawable.GradientDrawable().apply { shape = android.graphics.drawable.GradientDrawable.OVAL; setColor(Color.parseColor(fundo)) }
+                    layoutParams = LinearLayout.LayoutParams(dp(40), dp(40))
+                })
+                addView(LinearLayout(a).apply {
+                    orientation = LinearLayout.VERTICAL; setPadding(dp(12), 0, dp(8), 0)
+                    addView(Ui.texto(a, "Parcela ${f.n} de ${f.total}", 15f, Ui.TEXTO, Ui.MEDIO))
+                    addView(Ui.texto(a, "Vencimento ${f.venc.format(fmt)}", 13f, Ui.TEXTO2).apply { layoutParams = Ui.lp(topo = dp(3)) })
+                }, LinearLayout.LayoutParams(0, -2, 1f))
+                addView(LinearLayout(a).apply {
+                    orientation = LinearLayout.VERTICAL; gravity = Gravity.END
+                    addView(Ui.texto(a, brl.format(if (f.pago) f.valor else f.aPagar), 15f, if (f.pago) Ui.TEXTO2 else Ui.TEXTO, Ui.NEGRITO, Gravity.END))
+                    addView(Ui.chip(a, rotulo, cor, fundo, false).apply { layoutParams = LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(4) } })
+                })
+            })
+            if (!f.pago) {
+                val det = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(52), 0, 0, 0) }
+                when {
+                    f.desconto > 0 -> det.addView(Ui.texto(a, "Valor cheio ${brl.format(f.valor)} · desconto de ${brl.format(f.desconto)} pagando até o vencimento", 12f, Ui.VERDE).apply { layoutParams = Ui.lp(topo = dp(10)) })
+                    f.encargos > 0 -> det.addView(Ui.texto(a, "Inclui ${brl.format(f.encargos)} de multa e juros", 12f, Ui.VERMELHO).apply { layoutParams = Ui.lp(topo = dp(10)) })
                 }
-                textSize = 18f; setTextColor(Color.parseColor("#1B1A2E")); setTypeface(typeface, android.graphics.Typeface.BOLD)
-            })
-            if (!f.pago) card.addView(Button(a).apply {
-                text = I18n.t("Pagar com PIX"); isAllCaps = false; setTextColor(Color.WHITE); setBackgroundResource(R.drawable.btn_azul)
-                layoutParams = LinearLayout.LayoutParams(-1, (46 * dp).toInt()).apply { topMargin = (10 * dp).toInt() }
-                setOnClickListener { mostrarPix(a, d, f.aPagar, "Parcela ${f.n}/${f.total} · vencimento ${f.venc.format(fmt)}", "NXC${num}P${f.n}", f.n) }
-            })
-            // cartão de crédito ou boleto: página de pagamento do Asaas da parcela
-            val link = linkParcela(d, f.n)
-            if (!f.pago && link.startsWith("https://")) card.addView(Button(a).apply {
-                text = I18n.t("Cartão de crédito ou boleto"); isAllCaps = false; setTextColor(Color.parseColor("#1F5FE8")); setBackgroundResource(R.drawable.btn_outline_azul)
-                layoutParams = LinearLayout.LayoutParams(-1, (44 * dp).toInt()).apply { topMargin = (8 * dp).toInt() }
-                setOnClickListener { try { a.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(link))) } catch (e: Exception) { } }
-            })
-            alvo.addView(card)
+                val botoes = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; layoutParams = Ui.lp(topo = dp(2)) }
+                botoes.addView(Ui.botao(a, I18n.t("Pagar com PIX"), Ui.VERDE, alt = 44) {
+                    mostrarPix(a, d, f.aPagar, "Parcela ${f.n}/${f.total} · vencimento ${f.venc.format(fmt)}", "NXC${num}P${f.n}", f.n)
+                }.apply { textSize = 14f; layoutParams = LinearLayout.LayoutParams(0, dp(44), 1f).apply { topMargin = dp(10) } })
+                val link = linkParcela(d, f.n)
+                if (link.startsWith("https://")) botoes.addView(Ui.botao(a, I18n.t("Cartão ou boleto"), contorno = true, texto = Ui.AZUL, alt = 44) {
+                    try { a.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(link))) } catch (e: Exception) { }
+                }.apply { textSize = 14f; layoutParams = LinearLayout.LayoutParams(0, dp(44), 1f).apply { topMargin = dp(10); marginStart = dp(8) } })
+                det.addView(botoes)
+                // a próxima e as atrasadas já aparecem abertas; as demais abrem com um toque
+                val aberta = f.diasAtraso > 0 || f.n == proxN
+                det.visibility = if (aberta) View.VISIBLE else View.GONE
+                bloco.addView(det)
+                bloco.isClickable = true
+                bloco.background = Ui.toque(a, "#FFFFFF", 14)
+                bloco.setOnClickListener { det.visibility = if (det.visibility == View.VISIBLE) View.GONE else View.VISIBLE }
+            }
+            card.addView(bloco)
         }
+        alvo.addView(card)
     }
 }

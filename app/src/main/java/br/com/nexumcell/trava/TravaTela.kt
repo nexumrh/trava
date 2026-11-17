@@ -80,11 +80,15 @@ object TravaTela {
             setPadding(0, px(6), 0, px(6))
         }
         fun botao(t: String, fundo: String, cor: String, acao: () -> Unit) = Button(ctx).apply {
-            text = I18n.t(t); isAllCaps = false; setTextColor(Color.parseColor(cor)); setBackgroundColor(Color.parseColor(fundo))
+            text = I18n.t(t); isAllCaps = false; setTextColor(Color.parseColor(cor)); textSize = 15f; typeface = Ui.MEDIO; stateListAnimator = null
+            background = Ui.toque(ctx, fundo, 14, ripple = "#33FFFFFF")
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, px(52)).apply { topMargin = px(12) }
             setOnClickListener { try { acao() } catch (e: Throwable) { } }
         }
-        col.addView(texto("🔒", 54f, "#FFFFFF"))
+        col.addView(android.widget.ImageView(ctx).apply {
+            setImageResource(R.drawable.ic_cadeado)
+            layoutParams = LinearLayout.LayoutParams(px(64), px(64)).apply { gravity = android.view.Gravity.CENTER_HORIZONTAL; bottomMargin = px(8) }
+        })
         col.addView(texto("Aparelho bloqueado", 26f, "#FFFFFF", true))
         tvMotivo = texto("", 15f, "#C9D3EA"); col.addView(tvMotivo)
         tvValor = texto("", 18f, "#F2C94C", true); col.addView(tvValor)
@@ -101,7 +105,7 @@ object TravaTela {
             Toast.makeText(ctx, I18n.t("Verificando…"), Toast.LENGTH_SHORT).show()
             Thread { Sync.executar(ctx) }.start()
         })
-        col.addView(botao("💬 Falar com o Suporte NexumCell", "#1E2C4F", "#FFFFFF") {
+        col.addView(botao("Falar com o Suporte NexumCell", "#1E2C4F", "#FFFFFF") {
             try { ctx.startActivity(android.content.Intent(ctx, SuporteActivity::class.java).putExtra("bloqueado", true).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) } catch (e: Exception) { }
         })
         col.addView(botao("Emergência (190 / 192 / 193)", "#7A1F1F", "#FFFFFF") { discar(ctx, "") })
