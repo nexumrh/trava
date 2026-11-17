@@ -47,6 +47,16 @@ class MainActivity : Activity() {
 
     private fun dpx(x: Int) = (x * resources.displayMetrics.density).toInt()
 
+    /** Uma linha do diagnóstico, com ✓/✗ e dica quando falta. */
+    private fun linhaDiag(lista: LinearLayout, item: Policy.DiagItem) {
+        lista.addView(TextView(this).apply {
+            text = (if (item.ok) "✓  " else "✗  ") + item.titulo + (if (!item.ok) "\n      " + item.dica else "")
+            textSize = 14f
+            setTextColor(Color.parseColor(if (item.ok) "#0E8A5F" else if (item.critico) "#C62828" else "#B06A00"))
+            setPadding(0, dpx(6), 0, dpx(6))
+        })
+    }
+
     /** Tela "Status da instalação" (item 5): checklist das proteções, acessível em qualquer estado. */
     private fun telaDiagnostico() {
         val diag = Policy.diagnostico(this)
