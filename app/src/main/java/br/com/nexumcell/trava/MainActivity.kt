@@ -32,6 +32,7 @@ class MainActivity : Activity() {
         setContentView(R.layout.activity_main)
         findViewById<Button>(R.id.btnAtualizar).setOnClickListener { atualizar() }
         findViewById<TextView>(R.id.abaFaturas).setOnClickListener { abrirAba(0) }
+        findViewById<TextView>(R.id.abaParcelas).setOnClickListener { abrirAba(3) }
         findViewById<TextView>(R.id.abaContrato).setOnClickListener { abrirAba(1) }
         findViewById<TextView>(R.id.abaSuporte).setOnClickListener { abrirAba(2) }
         findViewById<View>(R.id.btnSino).setOnClickListener { abrirAba(0); atualizar() }
@@ -40,45 +41,11 @@ class MainActivity : Activity() {
         findViewById<View>(R.id.qaContato).setOnClickListener { abrirAba(2) }
         findViewById<View>(R.id.qaEmergencia).setOnClickListener { try { startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:190"))) } catch (e: Exception) { } }
         findViewById<View>(R.id.qaConfig).setOnClickListener { try { startActivity(Intent(Settings.ACTION_SETTINGS)) } catch (e: Exception) { } }
-        findViewById<Button>(R.id.btnSelfie).setOnClickListener { tirarSelfie() }
         lerLink(intent)
         botaoFlutuante()
-        linkRemocaoFixo()
     }
 
     private fun dpx(x: Int) = (x * resources.displayMetrics.density).toInt()
-
-    /**
-     * Link fixo de remoção, sempre visível no rodapé — criado no onCreate, não depende
-     * do que a tela consiga carregar. Garante que o código de remoção da loja/dono pode
-     * ser inserido em qualquer estado, inclusive com o app preso em "Configurando…".
-     */
-    private fun linkRodape(txt: String, acao: () -> Unit) = TextView(this).apply {
-        text = txt; textSize = 13f; setTextColor(Color.parseColor("#1D4ED8"))
-        gravity = Gravity.CENTER; setPadding(dpx(14), dpx(8), dpx(14), dpx(8)); isClickable = true
-        paintFlags = paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG
-        background = GradientDrawable().apply {
-            cornerRadius = dpx(20).toFloat(); setColor(Color.parseColor("#F2F5FF"))
-            setStroke(dpx(1), Color.parseColor("#1D4ED8"))
-        }
-        setOnClickListener { acao() }
-    }
-
-    private fun linkRemocaoFixo() {
-        val col = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(linkRodape("Status da instalação") { telaDiagnostico() },
-                LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dpx(8) })
-            addView(linkRodape("Problema? Inserir código de remoção da loja") { pedirCodigoMestre() })
-        }
-        val lp = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
-            gravity = Gravity.BOTTOM or Gravity.START; marginStart = dpx(16); bottomMargin = dpx(24)
-        }
-        addContentView(
-            FrameLayout(this).apply { addView(col, lp) },
-            FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
-        )
-    }
 
     /** Uma linha do diagnóstico, com ✓/✗ e dica quando falta. */
     private fun linhaDiag(lista: LinearLayout, item: Policy.DiagItem) {
@@ -399,19 +366,23 @@ class MainActivity : Activity() {
         findViewById<TextView>(R.id.tvDica).text = if (offline > 0)
             "Se ficar mais de $offline dias sem internet, o aparelho trava sozinho. Reconecte-se ou fale com a loja para recuperar o acesso."
             else "Se ficar muito tempo desconectado, o aparelho trava sozinho. Reconecte-se ou fale com a loja para recuperar o acesso."
-        mostrarSelfie(d)
         preencherAbas(d)
         abrirAba(abaAtual, false)
     }
 
-    /* ---------- abas: Faturas · Contrato · Suporte ---------- */
+    /* ---------- abas: Tela inicial (0) · Parcelas (3) · Contrato (1) · Suporte (2) ---------- */
     private var abaAtual = 0
     private fun abrirAba(i: Int, guardar: Boolean = true) {
         if (guardar) abaAtual = i
-        val ids = listOf(R.id.secFaturas, R.id.secContrato, R.id.secSuporte)
-        val abas = listOf(R.id.abaFaturas, R.id.abaContrato, R.id.abaSuporte)
-        ids.forEachIndexed { k, id -> findViewById<View>(id).visibility = if (k == i) View.VISIBLE else View.GONE }
-        abas.forEachIndexed { k, id -> findViewById<TextView>(id).apply {
+        val comNav = findViewById<View>(R.id.abas).visibility == View.VISIBLE
+        // Tela inicial: cartão, visão geral e atalhos. Parcelas: só calendário + lista.
+        findViewById<View>(R.id.blocoInicio).visibility = if (i == 0 || !comNav) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.blocoParcelas).visibility = if (i == 3 || !comNav) View.VISIBLE else View.GONE
+        val sec = when (i) { 1 -> R.id.secContrato; 2 -> R.id.secSuporte; else -> R.id.secFaturas }
+        listOf(R.id.secFaturas, R.id.secContrato, R.id.secSuporte).forEach { findViewById<View>(it).visibility = if (it == sec) View.VISIBLE else View.GONE }
+        if (guardar) (findViewById<View>(R.id.blocoInicio).parent.parent as? android.widget.ScrollView)?.scrollTo(0, 0)
+        val abas = listOf(R.id.abaFaturas to 0, R.id.abaParcelas to 3, R.id.abaContrato to 1, R.id.abaSuporte to 2)
+        abas.forEach { (id, k) -> findViewById<TextView>(id).apply {
             setTextColor(android.graphics.Color.parseColor(if (k == i) "#FFFFFF" else "#9FB0D0"))
             setTypeface(null, if (k == i) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
             if (k == i) setBackgroundResource(R.drawable.nav_ativo) else setBackgroundColor(android.graphics.Color.TRANSPARENT)
@@ -444,30 +415,16 @@ class MainActivity : Activity() {
             .setPositiveButton("Entendi", null).show()
     }
 
-    /* ---------- Selfie pelo app (a loja só conclui a venda depois que ela chega) ---------- */
-    private var arqSelfie: java.io.File? = null
-    private fun mostrarSelfie(d: org.json.JSONObject) {
-        val st = Store(this)
-        val card = findViewById<View>(R.id.cardSelfie)
-        // pedida só na ativação: some 6 h depois de enviada (dá tempo de tirar outra se a loja pedir)
-        val pedida = d.optBoolean("selfieApp") && !d.optBoolean("quitado") &&
-            (st.selfieEnviadaEm == 0L || System.currentTimeMillis() - st.selfieEnviadaEm < 6 * 3_600_000L)
-        card.visibility = if (pedida) View.VISIBLE else View.GONE
-        if (!pedida) return
-        val enviada = st.selfieEnviadaEm > 0
-        findViewById<TextView>(R.id.tvSelfieTitulo).text = if (enviada) "Selfie enviada" else "Tire sua selfie"
-        findViewById<TextView>(R.id.tvSelfie).text = if (st.selfieEnviadaEm > 0)
-            "Selfie enviada. Aguarde a loja confirmar. Se pedirem, tire de novo."
-            else "É necessário enviar uma selfie pelo app para a loja concluir a ativação do seu crédito."
-        findViewById<Button>(R.id.btnSelfie).text = if (st.selfieEnviadaEm > 0) "Tirar outra selfie" else "Tirar selfie agora"
-    }
-
-    /* ---------- Device Tag: identificação do contrato (começa com N) ---------- */
+    /* ---------- Device Tag: identificação do contrato (sempre 8 letras, começa com N) ---------- */
     private fun deviceTag(d: org.json.JSONObject): String {
-        val t = d.optString("deviceTag").trim()
-        if (t.isNotEmpty()) return t
-        val m = "ABCDEFGHIJ"
-        return "N" + d.optLong("vendaNumero").coerceAtLeast(0).toString().map { m[it - '0'] }.joinToString("")
+        val t = d.optString("deviceTag").uppercase().filter { it in 'A'..'Z' }
+        if (t.isNotEmpty()) return t.take(8)
+        // nº do contrato embaralhado (sem repetir) em 7 letras: N + 7 = 8 letras
+        val mod = 8_031_810_176L // 26^7
+        var x = (d.optLong("vendaNumero").coerceAtLeast(0) * 1_103_515_245L + 12_345L).mod(mod)
+        val sb = StringBuilder()
+        repeat(7) { sb.append('A' + (x % 26).toInt()); x /= 26 }
+        return "N" + sb.reverse()
     }
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
@@ -580,59 +537,6 @@ class MainActivity : Activity() {
         cont.addView(leg)
     }
 
-    private fun tirarSelfie() {
-        try {
-            val dir = java.io.File(cacheDir, "selfie").apply { mkdirs() }
-            val f = java.io.File(dir, "selfie.jpg"); if (f.exists()) f.delete(); arqSelfie = f
-            val uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.arquivos", f)
-            val i = Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
-                .putExtra(android.provider.MediaStore.EXTRA_OUTPUT, uri)
-                .putExtra("android.intent.extras.CAMERA_FACING", 1).putExtra("android.intent.extras.LENS_FACING_FRONT", 1)
-                .putExtra("android.intent.extra.USE_FRONT_CAMERA", true)
-                .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            @Suppress("DEPRECATION") startActivityForResult(i, 42)
-        } catch (e: Exception) {
-            android.widget.Toast.makeText(this, "Não foi possível abrir a câmera.", android.widget.Toast.LENGTH_LONG).show()
-        }
-    }
-
-    @Deprecated("API antiga, mas simples e sem biblioteca extra")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        @Suppress("DEPRECATION") super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != 42 || resultCode != RESULT_OK) return
-        val f = arqSelfie ?: return
-        val btn = findViewById<Button>(R.id.btnSelfie); btn.isEnabled = false; btn.text = "Enviando…"
-        Thread {
-            val ok = try {
-                val b64 = fotoBase64(f) ?: throw Exception("foto")
-                Api(this).enviarSelfie("data:image/jpeg;base64,$b64")
-                Store(this).selfieEnviadaEm = System.currentTimeMillis(); f.delete(); true
-            } catch (e: Exception) { false }
-            runOnUiThread {
-                btn.isEnabled = true
-                android.widget.Toast.makeText(this, if (ok) "Selfie enviada para a loja." else "Não foi possível enviar. Confira a internet e tente de novo.", android.widget.Toast.LENGTH_LONG).show()
-                mostrar()
-            }
-        }.start()
-    }
-
-    /** Lê a foto, acerta a rotação, reduz para no máximo 720 px e devolve em base64 (JPEG). */
-    private fun fotoBase64(f: java.io.File): String? {
-        val op = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        android.graphics.BitmapFactory.decodeFile(f.path, op)
-        if (op.outWidth <= 0) return null
-        var amostra = 1; while (maxOf(op.outWidth, op.outHeight) / (amostra * 2) >= 720) amostra *= 2
-        var bmp = android.graphics.BitmapFactory.decodeFile(f.path, android.graphics.BitmapFactory.Options().apply { inSampleSize = amostra }) ?: return null
-        val graus = when (android.media.ExifInterface(f.path).getAttributeInt(android.media.ExifInterface.TAG_ORIENTATION, 1)) {
-            android.media.ExifInterface.ORIENTATION_ROTATE_90 -> 90f; android.media.ExifInterface.ORIENTATION_ROTATE_180 -> 180f
-            android.media.ExifInterface.ORIENTATION_ROTATE_270 -> 270f; else -> 0f }
-        val esc = minOf(1f, 720f / maxOf(bmp.width, bmp.height))
-        val mx = android.graphics.Matrix().apply { postScale(esc, esc); if (graus != 0f) postRotate(graus) }
-        bmp = android.graphics.Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, mx, true)
-        val out = java.io.ByteArrayOutputStream(); bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 78, out)
-        return android.util.Base64.encodeToString(out.toByteArray(), android.util.Base64.NO_WRAP)
-    }
-
     private fun preencherAbas(d: org.json.JSONObject) {
         val st = Store(this)
         // Contrato
@@ -647,13 +551,12 @@ class MainActivity : Activity() {
         s2.addView(texto("Suporte", 17f, negrito = true))
         s2.addView(texto("Fale com a gente. Tenha em mãos o número do contrato: ${d.optLong("vendaNumero")}.", 14f, "#696784"))
         // O atendimento acontece DENTRO do app, com o Suporte NexumCell (não abre WhatsApp).
-        botaoAba(s2, "🛟 Falar com o Suporte NexumCell", true) { startActivity(Intent(this, SuporteActivity::class.java)) }
-        botaoAba(s2, "🤖 Tirar dúvidas com a assistente (IA)") { startActivity(Intent(this, ChatActivity::class.java)) }
+        botaoAba(s2, "Falar com o Suporte NexumCell", true) { startActivity(Intent(this, SuporteActivity::class.java)) }
         botaoAba(s2, "❓ Tirar dúvidas no portal do cliente") { abrirUrl(portal(d)) }
         botaoAba(s2, "🚨 Meu celular foi roubado ou perdido") { abrirUrl(portal(d)) }
         s2.addView(texto("Perguntas frequentes", 16f, negrito = true).apply { setPadding(0, 36, 0, 8) })
         listOf(
-            "Paguei e o celular continua bloqueado. O que faço?" to "A liberação é automática em poucos minutos. Toque em Atualizar na aba Faturas. Se continuar, fale com o Suporte NexumCell.",
+            "Paguei e o celular continua bloqueado. O que faço?" to "A liberação é automática em poucos minutos. Toque em Atualizar na aba Parcelas. Se continuar, fale com o Suporte NexumCell.",
             "Posso pagar antes do vencimento?" to "Sim. Pagando antes você ganha desconto e, quitando tudo, economiza os juros das parcelas que ainda não venceram.",
             "Como mudo o dia de vencimento?" to "Pelo portal do cliente, em Mudar dia do vencimento (uma vez por contrato).",
             "Quando o app sai do celular?" to "Ao quitar o contrato, a proteção é removida automaticamente e você pode desinstalar."

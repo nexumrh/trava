@@ -70,7 +70,6 @@
 
         <!-- Tela do app (status do contrato) -->
         <activity android:name=".AvisoActivity" android:exported="false" android:excludeFromRecents="true" android:theme="@android:style/Theme.Material.NoActionBar" />
-        <activity android:name=".ChatActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".SuporteActivity" android:exported="false" android:windowSoftInputMode="adjustResize" android:showWhenLocked="true" android:turnScreenOn="true" android:launchMode="singleTask" />
         <activity
             android:name=".MainActivity"
@@ -132,15 +131,6 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
-
-        <!-- Selfie pelo app: a câmera grava a foto aqui (pasta interna do app) -->
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.arquivos"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/arquivos" />
-        </provider>
 
         <!-- Widget da tela inicial: próxima parcela -->
         <receiver android:name=".WidgetParcela" android:exported="true" android:label="Minha parcela">

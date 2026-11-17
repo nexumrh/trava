@@ -158,10 +158,6 @@ class Store(ctx: Context) {
         get() = l("saidaAte")
         set(v) { pl("saidaAte", v) }
 
-    // selfie enviada pelo app (ativação do crédito)
-    var selfieEnviadaEm: Long
-        get() = l("selfieEnviadaEm")
-        set(v) { pl("selfieEnviadaEm", v) }
 
     val configurado: Boolean get() = token.isNotEmpty() && apiKey.isNotEmpty() && projectId.isNotEmpty()
 
@@ -171,6 +167,11 @@ class Store(ctx: Context) {
         b.getString("apiKey")?.takeIf { it.isNotBlank() }?.let { apiKey = it }
         b.getString("projectId")?.takeIf { it.isNotBlank() }?.let { projectId = it }
     }
+
+    // suporte: momento em que o cliente foi passado da assistente para o atendente humano
+    var suporteHumanoEm: Long
+        get() = l("suporteHumanoEm")
+        set(v) { pl("suporteHumanoEm", v) }
 
     fun cache(): JSONObject? {
         val c = cacheJson

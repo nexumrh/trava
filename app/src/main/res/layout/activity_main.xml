@@ -18,6 +18,8 @@
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
             android:paddingStart="20dp" android:paddingEnd="20dp" android:paddingBottom="24dp">
 
+            <!-- tela inicial: some nas outras abas -->
+            <LinearLayout android:id="@+id/blocoInicio" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
             <!-- card estilo PayJoy (preenchido no código quando há contrato ativo) -->
             <LinearLayout android:id="@+id/heroPay" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:layout_marginTop="16dp" android:orientation="vertical" android:background="@drawable/card_claro" android:padding="18dp" android:visibility="gone"/>
@@ -33,17 +35,6 @@
             <TextView android:id="@+id/tvSaibaMais" android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:layout_marginTop="12dp" android:paddingTop="4dp" android:paddingBottom="4dp"
                 android:text="Saiba mais  ›" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold"/>
-            </LinearLayout>
-
-            <!-- selfie pedida pela loja (ativação do crédito) -->
-            <LinearLayout android:id="@+id/cardSelfie" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="18dp" android:orientation="vertical" android:background="@drawable/card_dica" android:padding="16dp" android:visibility="gone">
-                <TextView android:id="@+id/tvSelfieTitulo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:drawableStart="@drawable/ic_camera" android:drawablePadding="10dp"
-                    android:gravity="center_vertical" android:text="Tire sua selfie" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold"/>
-                <TextView android:id="@+id/tvSelfie" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp"
-                    android:text="É necessário enviar uma selfie pelo app para a loja concluir a ativação do seu crédito." android:textColor="#E6EEFF" android:textSize="14sp"/>
-                <Button android:id="@+id/btnSelfie" android:layout_width="match_parent" android:layout_height="50dp" android:layout_marginTop="12dp"
-                    android:background="@drawable/btn_ciano" android:text="Tirar selfie agora" android:textAllCaps="false" android:textColor="#062A2A" android:textStyle="bold" android:textSize="16sp"/>
             </LinearLayout>
 
             <!-- visão geral -->
@@ -79,19 +70,22 @@
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:gravity="center" android:text="Configurações\ndo dispositivo" android:textColor="#FFFFFF" android:textSize="12sp"/>
                 </LinearLayout>
             </LinearLayout>
+            </LinearLayout>
 
             <!-- conteúdo das abas (cartão claro) -->
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="26dp"
+            <LinearLayout android:id="@+id/cardAbas" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="26dp"
                 android:orientation="vertical" android:background="@drawable/card_app">
                 <LinearLayout android:id="@+id/secContrato" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" android:visibility="gone"/>
                 <LinearLayout android:id="@+id/secSuporte" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" android:visibility="gone"/>
                 <LinearLayout android:id="@+id/secFaturas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+                    <LinearLayout android:id="@+id/blocoParcelas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Calendário das parcelas"
                         android:textColor="#1B1A2E" android:textSize="17sp" android:textStyle="bold" android:layout_marginBottom="10dp"/>
                     <LinearLayout android:id="@+id/calParcelas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginBottom="18dp"/>
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Minhas parcelas"
                         android:textColor="#1B1A2E" android:textSize="17sp" android:textStyle="bold" android:layout_marginBottom="10dp"/>
                     <LinearLayout android:id="@+id/listaFaturas" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"/>
+                    </LinearLayout>
                     <Button android:id="@+id/btnAtualizar" android:layout_width="match_parent" android:layout_height="50dp"
                         android:layout_marginTop="6dp" android:background="@drawable/btn_outline_claro"
                         android:text="Atualizar" android:textAllCaps="false" android:textColor="#0A1733"/>
@@ -104,12 +98,14 @@
 
     <!-- navegação -->
     <LinearLayout android:id="@+id/abas" android:layout_width="match_parent" android:layout_height="72dp" android:orientation="horizontal"
-        android:background="@drawable/nav_fundo" android:gravity="center_vertical" android:paddingStart="10dp" android:paddingEnd="10dp">
-        <TextView android:id="@+id/abaFaturas" android:layout_width="0dp" android:layout_height="56dp" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp"
+        android:background="@drawable/nav_fundo" android:gravity="center_vertical" android:paddingStart="6dp" android:paddingEnd="6dp">
+        <TextView android:id="@+id/abaFaturas" android:layout_width="0dp" android:layout_height="56dp" android:layout_weight="1" android:layout_marginStart="3dp" android:layout_marginEnd="3dp"
             android:gravity="center" android:drawableTop="@drawable/ic_casa" android:paddingTop="6dp" android:text="Tela inicial" android:textSize="12sp" android:textColor="#FFFFFF"/>
-        <TextView android:id="@+id/abaContrato" android:layout_width="0dp" android:layout_height="56dp" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp"
+        <TextView android:id="@+id/abaParcelas" android:layout_width="0dp" android:layout_height="56dp" android:layout_weight="1" android:layout_marginStart="3dp" android:layout_marginEnd="3dp"
+            android:gravity="center" android:drawableTop="@drawable/ic_cal_nav" android:paddingTop="6dp" android:text="Parcelas" android:textSize="12sp" android:textColor="#9FB0D0"/>
+        <TextView android:id="@+id/abaContrato" android:layout_width="0dp" android:layout_height="56dp" android:layout_weight="1" android:layout_marginStart="3dp" android:layout_marginEnd="3dp"
             android:gravity="center" android:drawableTop="@drawable/ic_doc" android:paddingTop="6dp" android:text="Contrato" android:textSize="12sp" android:textColor="#9FB0D0"/>
-        <TextView android:id="@+id/abaSuporte" android:layout_width="0dp" android:layout_height="56dp" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp"
+        <TextView android:id="@+id/abaSuporte" android:layout_width="0dp" android:layout_height="56dp" android:layout_weight="1" android:layout_marginStart="3dp" android:layout_marginEnd="3dp"
             android:gravity="center" android:drawableTop="@drawable/ic_suporte" android:paddingTop="6dp" android:text="Suporte" android:textSize="12sp" android:textColor="#9FB0D0"/>
     </LinearLayout>
 </LinearLayout>
