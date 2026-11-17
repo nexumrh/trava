@@ -465,7 +465,9 @@ class MainActivity : Activity() {
     /* ---------- Device Tag: identificação do contrato (começa com N) ---------- */
     private fun deviceTag(d: org.json.JSONObject): String {
         val t = d.optString("deviceTag").trim()
-        return if (t.isNotEmpty()) t else "N%05d".format(d.optLong("vendaNumero"))
+        if (t.isNotEmpty()) return t
+        val m = "ABCDEFGHIJ"
+        return "N" + d.optLong("vendaNumero").coerceAtLeast(0).toString().map { m[it - '0'] }.joinToString("")
     }
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
