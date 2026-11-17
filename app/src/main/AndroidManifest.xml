@@ -133,15 +133,6 @@
             </intent-filter>
         </service>
 
-        <!-- Selfie pelo app: a câmera grava a foto aqui (pasta interna do app) -->
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.arquivos"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/arquivos" />
-        </provider>
-
         <!-- Widget da tela inicial: próxima parcela -->
         <receiver android:name=".WidgetParcela" android:exported="true" android:label="Minha parcela">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>

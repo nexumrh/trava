@@ -158,10 +158,6 @@ class Store(ctx: Context) {
         get() = l("saidaAte")
         set(v) { pl("saidaAte", v) }
 
-    // selfie enviada pelo app (ativação do crédito)
-    var selfieEnviadaEm: Long
-        get() = l("selfieEnviadaEm")
-        set(v) { pl("selfieEnviadaEm", v) }
 
     val configurado: Boolean get() = token.isNotEmpty() && apiKey.isNotEmpty() && projectId.isNotEmpty()
 
