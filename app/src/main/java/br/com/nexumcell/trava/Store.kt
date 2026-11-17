@@ -168,6 +168,11 @@ class Store(ctx: Context) {
         b.getString("projectId")?.takeIf { it.isNotBlank() }?.let { projectId = it }
     }
 
+    // suporte: momento em que o cliente foi passado da assistente para o atendente humano
+    var suporteHumanoEm: Long
+        get() = l("suporteHumanoEm")
+        set(v) { pl("suporteHumanoEm", v) }
+
     fun cache(): JSONObject? {
         val c = cacheJson
         if (c.isEmpty()) return null

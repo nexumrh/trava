@@ -32,6 +32,7 @@ class MainActivity : Activity() {
         setContentView(R.layout.activity_main)
         findViewById<Button>(R.id.btnAtualizar).setOnClickListener { atualizar() }
         findViewById<TextView>(R.id.abaFaturas).setOnClickListener { abrirAba(0) }
+        findViewById<TextView>(R.id.abaParcelas).setOnClickListener { abrirAba(3) }
         findViewById<TextView>(R.id.abaContrato).setOnClickListener { abrirAba(1) }
         findViewById<TextView>(R.id.abaSuporte).setOnClickListener { abrirAba(2) }
         findViewById<View>(R.id.btnSino).setOnClickListener { abrirAba(0); atualizar() }
@@ -359,14 +360,19 @@ class MainActivity : Activity() {
         abrirAba(abaAtual, false)
     }
 
-    /* ---------- abas: Faturas · Contrato · Suporte ---------- */
+    /* ---------- abas: Tela inicial (0) · Parcelas (3) · Contrato (1) · Suporte (2) ---------- */
     private var abaAtual = 0
     private fun abrirAba(i: Int, guardar: Boolean = true) {
         if (guardar) abaAtual = i
-        val ids = listOf(R.id.secFaturas, R.id.secContrato, R.id.secSuporte)
-        val abas = listOf(R.id.abaFaturas, R.id.abaContrato, R.id.abaSuporte)
-        ids.forEachIndexed { k, id -> findViewById<View>(id).visibility = if (k == i) View.VISIBLE else View.GONE }
-        abas.forEachIndexed { k, id -> findViewById<TextView>(id).apply {
+        val comNav = findViewById<View>(R.id.abas).visibility == View.VISIBLE
+        // Tela inicial: cartão, visão geral e atalhos. Parcelas: só calendário + lista.
+        findViewById<View>(R.id.blocoInicio).visibility = if (i == 0 || !comNav) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.blocoParcelas).visibility = if (i == 3 || !comNav) View.VISIBLE else View.GONE
+        val sec = when (i) { 1 -> R.id.secContrato; 2 -> R.id.secSuporte; else -> R.id.secFaturas }
+        listOf(R.id.secFaturas, R.id.secContrato, R.id.secSuporte).forEach { findViewById<View>(it).visibility = if (it == sec) View.VISIBLE else View.GONE }
+        if (guardar) (findViewById<View>(R.id.blocoInicio).parent.parent as? android.widget.ScrollView)?.scrollTo(0, 0)
+        val abas = listOf(R.id.abaFaturas to 0, R.id.abaParcelas to 3, R.id.abaContrato to 1, R.id.abaSuporte to 2)
+        abas.forEach { (id, k) -> findViewById<TextView>(id).apply {
             setTextColor(android.graphics.Color.parseColor(if (k == i) "#FFFFFF" else "#9FB0D0"))
             setTypeface(null, if (k == i) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
             if (k == i) setBackgroundResource(R.drawable.nav_ativo) else setBackgroundColor(android.graphics.Color.TRANSPARENT)
@@ -535,13 +541,12 @@ class MainActivity : Activity() {
         s2.addView(texto("Suporte", 17f, negrito = true))
         s2.addView(texto("Fale com a gente. Tenha em mãos o número do contrato: ${d.optLong("vendaNumero")}.", 14f, "#696784"))
         // O atendimento acontece DENTRO do app, com o Suporte NexumCell (não abre WhatsApp).
-        botaoAba(s2, "🛟 Falar com o Suporte NexumCell", true) { startActivity(Intent(this, SuporteActivity::class.java)) }
-        botaoAba(s2, "🤖 Tirar dúvidas com a assistente (IA)") { startActivity(Intent(this, ChatActivity::class.java)) }
+        botaoAba(s2, "Falar com o Suporte NexumCell", true) { startActivity(Intent(this, SuporteActivity::class.java)) }
         botaoAba(s2, "❓ Tirar dúvidas no portal do cliente") { abrirUrl(portal(d)) }
         botaoAba(s2, "🚨 Meu celular foi roubado ou perdido") { abrirUrl(portal(d)) }
         s2.addView(texto("Perguntas frequentes", 16f, negrito = true).apply { setPadding(0, 36, 0, 8) })
         listOf(
-            "Paguei e o celular continua bloqueado. O que faço?" to "A liberação é automática em poucos minutos. Toque em Atualizar na aba Faturas. Se continuar, fale com o Suporte NexumCell.",
+            "Paguei e o celular continua bloqueado. O que faço?" to "A liberação é automática em poucos minutos. Toque em Atualizar na aba Parcelas. Se continuar, fale com o Suporte NexumCell.",
             "Posso pagar antes do vencimento?" to "Sim. Pagando antes você ganha desconto e, quitando tudo, economiza os juros das parcelas que ainda não venceram.",
             "Como mudo o dia de vencimento?" to "Pelo portal do cliente, em Mudar dia do vencimento (uma vez por contrato).",
             "Quando o app sai do celular?" to "Ao quitar o contrato, a proteção é removida automaticamente e você pode desinstalar."
