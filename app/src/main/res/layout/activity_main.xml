@@ -52,24 +52,24 @@
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:orientation="horizontal">
                     <LinearLayout android:id="@+id/qaApps" style="@style/Atalho">
                         <ImageView style="@style/AtalhoIcone" android:src="@drawable/ic_apps" android:contentDescription="Aplicativos permitidos"/>
-                        <TextView style="@style/AtalhoTexto" android:text="Apps\npermitidos"/>
+                        <TextView style="@style/AtalhoTexto" android:text="Apps"/>
                     </LinearLayout>
                     <LinearLayout android:id="@+id/qaContato" style="@style/Atalho">
                         <ImageView style="@style/AtalhoIcone" android:src="@drawable/ic_contato" android:contentDescription="Suporte"/>
-                        <TextView style="@style/AtalhoTexto" android:text="Falar com\no suporte"/>
+                        <TextView style="@style/AtalhoTexto" android:text="Suporte"/>
                     </LinearLayout>
                     <LinearLayout android:id="@+id/qaEmergencia" style="@style/Atalho">
                         <ImageView style="@style/AtalhoIcone" android:src="@drawable/ic_tel_escuro" android:contentDescription="Emergência"/>
-                        <TextView style="@style/AtalhoTexto" android:text="Ligação de\nemergência"/>
+                        <TextView style="@style/AtalhoTexto" android:text="Emergência"/>
                     </LinearLayout>
                     <LinearLayout android:id="@+id/qaConfig" style="@style/Atalho">
                         <ImageView style="@style/AtalhoIcone" android:src="@drawable/ic_config" android:contentDescription="Configurações"/>
-                        <TextView style="@style/AtalhoTexto" android:text="Configurações"/>
+                        <TextView style="@style/AtalhoTexto" android:text="Ajustes"/>
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- aviso -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp"
+                <!-- aviso (some depois que o cliente toca em Entendido) -->
+                <LinearLayout android:id="@+id/cardAviso" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp"
                     android:orientation="horizontal" android:background="@drawable/card_branco" android:padding="16dp" android:gravity="top">
                     <ImageView android:layout_width="36dp" android:layout_height="36dp" android:background="@drawable/circulo_azul_claro"
                         android:padding="8dp" android:src="@drawable/ic_info" android:contentDescription="Aviso"/>
@@ -79,6 +79,9 @@
                         <TextView android:id="@+id/tvDica" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp"
                             android:textColor="#475569" android:textSize="13sp" android:lineSpacingExtra="2dp"
                             android:text="Se ficar muito tempo sem internet, o aparelho bloqueia por segurança. É só conectar para voltar ao normal."/>
+                        <TextView android:id="@+id/btnEntendido" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10dp"
+                            android:paddingTop="6dp" android:paddingBottom="6dp" android:paddingEnd="12dp"
+                            android:text="Entendido" android:textColor="#1D4ED8" android:textSize="14sp" android:fontFamily="sans-serif-medium"/>
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>

@@ -173,6 +173,11 @@ class Store(ctx: Context) {
         get() = l("suporteHumanoEm")
         set(v) { pl("suporteHumanoEm", v) }
 
+    // aviso "sem internet" da tela inicial: some depois do Entendido
+    var avisoOfflineVisto: Boolean
+        get() = p.getBoolean("avisoOfflineVisto", false)
+        set(v) { p.edit().putBoolean("avisoOfflineVisto", v).commit() }
+
     fun cache(): JSONObject? {
         val c = cacheJson
         if (c.isEmpty()) return null

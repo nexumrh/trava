@@ -41,6 +41,10 @@ class MainActivity : Activity() {
         findViewById<View>(R.id.qaContato).setOnClickListener { startActivity(Intent(this, SuporteActivity::class.java)) }
         findViewById<View>(R.id.qaEmergencia).setOnClickListener { try { startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:190"))) } catch (e: Exception) { } }
         findViewById<View>(R.id.qaConfig).setOnClickListener { try { startActivity(Intent(Settings.ACTION_SETTINGS)) } catch (e: Exception) { } }
+        findViewById<View>(R.id.btnEntendido).setOnClickListener {
+            Store(this).avisoOfflineVisto = true
+            findViewById<View>(R.id.cardAviso).visibility = View.GONE
+        }
         lerLink(intent)
     }
 
@@ -353,6 +357,7 @@ class MainActivity : Activity() {
         findViewById<TextView>(R.id.tvDica).text = if (offline > 0)
             "Se ficar mais de $offline ${if (offline == 1) "dia" else "dias"} sem internet, o aparelho bloqueia por segurança. É só conectar para voltar ao normal."
             else "Se ficar muito tempo sem internet, o aparelho bloqueia por segurança. É só conectar para voltar ao normal."
+        findViewById<View>(R.id.cardAviso).visibility = if (st.avisoOfflineVisto) View.GONE else View.VISIBLE
         preencherAbas(d)
         abrirAba(abaAtual, false)
     }
