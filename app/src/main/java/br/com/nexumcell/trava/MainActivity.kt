@@ -38,11 +38,10 @@ class MainActivity : Activity() {
         findViewById<View>(R.id.btnSino).setOnClickListener { abrirAba(0); atualizar() }
         findViewById<View>(R.id.tvSaibaMais).setOnClickListener { abrirAba(1) }
         findViewById<View>(R.id.qaApps).setOnClickListener { appsPermitidos() }
-        findViewById<View>(R.id.qaContato).setOnClickListener { abrirAba(2) }
+        findViewById<View>(R.id.qaContato).setOnClickListener { startActivity(Intent(this, SuporteActivity::class.java)) }
         findViewById<View>(R.id.qaEmergencia).setOnClickListener { try { startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:190"))) } catch (e: Exception) { } }
         findViewById<View>(R.id.qaConfig).setOnClickListener { try { startActivity(Intent(Settings.ACTION_SETTINGS)) } catch (e: Exception) { } }
         lerLink(intent)
-        botaoFlutuante()
     }
 
     private fun dpx(x: Int) = (x * resources.displayMetrics.density).toInt()
@@ -69,24 +68,6 @@ class MainActivity : Activity() {
             .setPositiveButton("Fechar", null)
             .setNeutralButton("Atualizar") { _, _ -> atualizar() }
             .show()
-    }
-
-    /** Portal flutuante de suporte: botão sempre visível que abre o Suporte NexumCell dentro do app. */
-    private fun botaoFlutuante() {
-        val fab = TextView(this).apply {
-            text = "💬  Suporte"; textSize = 15f; setTextColor(Color.WHITE); setTypeface(typeface, Typeface.BOLD)
-            gravity = Gravity.CENTER; setPadding(dpx(20), dpx(14), dpx(20), dpx(14)); isClickable = true
-            background = GradientDrawable().apply { cornerRadius = dpx(28).toFloat(); setColor(Color.parseColor("#1D4ED8")) }
-            elevation = dpx(8).toFloat()
-            setOnClickListener { startActivity(Intent(this@MainActivity, SuporteActivity::class.java)) }
-        }
-        val lp = FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT).apply {
-            gravity = Gravity.BOTTOM or Gravity.END; marginEnd = dpx(16); bottomMargin = dpx(88)
-        }
-        addContentView(
-            FrameLayout(this).apply { addView(fab, lp) },
-            FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
-        )
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -176,12 +157,7 @@ class MainActivity : Activity() {
     }
 
     private fun botao(lista: LinearLayout, t: String, acao: () -> Unit) {
-        lista.addView(Button(this).apply {
-            text = t; isAllCaps = false; setTextColor(android.graphics.Color.parseColor("#0A1733"))
-            setBackgroundResource(R.drawable.btn_outline_claro)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { bottomMargin = 16 }
-            setOnClickListener { try { acao() } catch (e: Exception) { } }
-        })
+        lista.addView(Ui.botao(this, t, contorno = true, texto = Ui.AZUL) { try { acao() } catch (e: Exception) { } })
     }
 
     /** Primeira abertura (instalação por link): pega o contrato copiado pela página ou abre o leitor de QR sozinho. */
@@ -295,7 +271,7 @@ class MainActivity : Activity() {
                 sit.text = "App não ativado"
                 tv.text = "Este aplicativo precisa ser ativado pela loja. Toque em “Ler QR code da loja” e aponte para o QR da instalação na tela do vendedor."
                 lista.removeAllViews()
-                botao(lista, "📷 Ler QR code da loja") { lerQr() }
+                botao(lista, "Ler QR code da loja") { lerQr() }
                 botao(lista, "Colar o link da instalação") { colarLink() }
                 botao(lista, "Remover a trava (código do dono)") { pedirCodigoMestre() }
                 return
@@ -325,6 +301,9 @@ class MainActivity : Activity() {
             return
         }
         st.configDesde = 0L
+        val primeiro = d.optString("clienteNome").trim().split(" ").firstOrNull().orEmpty().lowercase().replaceFirstChar { it.uppercase() }
+        olaInicio = if (primeiro.isNotEmpty()) "Olá, $primeiro" else "Olá!"
+        subInicio = "${d.optString("marca")} ${d.optString("modelo")}".trim().ifEmpty { "Acompanhe seu financiamento" }
         val r = Decisao.avaliar(d, System.currentTimeMillis(), st.ultimoSyncOk, st.liberadoLocalAte)
         val fat = Faturas.lista(d)
         val abertas = fat.filter { !it.pago }
@@ -349,43 +328,67 @@ class MainActivity : Activity() {
         desenharCalendario(findViewById(R.id.calParcelas), fat)
         Faturas.desenhar(this, lista, d)
         Faturas.quitacao(d)?.let { (valor, economia) ->
-            if (economia > 0.01) lista.addView(android.widget.Button(this).apply {
-                text = "Quitar o contrato agora: ${Faturas.brl.format(valor)} (economize ${Faturas.brl.format(economia)})"
-                isAllCaps = false; setTextColor(android.graphics.Color.parseColor("#0E8A5F"))
-                setBackgroundResource(R.drawable.btn_outline_claro)
-                setOnClickListener { Faturas.mostrarPix(this@MainActivity, d, valor, "Quitação antecipada do contrato nº ${d.optLong("vendaNumero")}", "NXC${d.optLong("vendaNumero")}Q") }
+            if (economia > 0.01) lista.addView(Ui.cartao(this).apply {
+                addView(LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+                    addView(Ui.iconeCirculo(this@MainActivity, R.drawable.ic_check, Ui.VERDE, Ui.VERDE_CLARO, 40))
+                    addView(LinearLayout(this@MainActivity).apply {
+                        orientation = LinearLayout.VERTICAL; setPadding(dp(14), 0, 0, 0)
+                        addView(Ui.texto(this@MainActivity, "Quite o contrato e economize", 15f, Ui.TEXTO, Ui.MEDIO))
+                        addView(Ui.texto(this@MainActivity, "Pague ${Faturas.brl.format(valor)} hoje e deixe de pagar ${Faturas.brl.format(economia)} em juros.", 13f, Ui.TEXTO2).apply { layoutParams = Ui.lp(topo = dp(4)) })
+                    }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                })
+                addView(Ui.botao(this@MainActivity, "Quitar com PIX", Ui.VERDE) {
+                    Faturas.mostrarPix(this@MainActivity, d, valor, "Quitação antecipada do contrato nº ${d.optLong("vendaNumero")}", "NXC${d.optLong("vendaNumero")}Q")
+                })
             })
         }
         val loja = listOf(d.optString("lojaNome"), d.optString("lojaTelefone")).filter { it.isNotEmpty() }.joinToString(" · ")
         rodape.text = buildString {
-            if (loja.isNotEmpty()) append("Loja: $loja\n")
+            if (loja.isNotEmpty()) append("$loja\n")
             if (st.ultimoSyncOk > 0) append("Atualizado em ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR")).format(Date(st.ultimoSyncOk))}")
         }
         findViewById<View>(R.id.abas).visibility = View.VISIBLE
         val offline = d.optInt("maxDiasOffline", 0)
         findViewById<TextView>(R.id.tvDica).text = if (offline > 0)
-            "Se ficar mais de $offline dias sem internet, o aparelho trava sozinho. Reconecte-se ou fale com a loja para recuperar o acesso."
-            else "Se ficar muito tempo desconectado, o aparelho trava sozinho. Reconecte-se ou fale com a loja para recuperar o acesso."
+            "Se ficar mais de $offline ${if (offline == 1) "dia" else "dias"} sem internet, o aparelho bloqueia por segurança. É só conectar para voltar ao normal."
+            else "Se ficar muito tempo sem internet, o aparelho bloqueia por segurança. É só conectar para voltar ao normal."
         preencherAbas(d)
         abrirAba(abaAtual, false)
     }
 
-    /* ---------- abas: Tela inicial (0) · Parcelas (3) · Contrato (1) · Suporte (2) ---------- */
+    /* ---------- abas: Início (0) · Parcelas (3) · Contrato (1) · Suporte (2) ---------- */
     private var abaAtual = 0
+    private var olaInicio = "Olá!"
+    private var subInicio = "Acompanhe seu financiamento"
     private fun abrirAba(i: Int, guardar: Boolean = true) {
         if (guardar) abaAtual = i
         val comNav = findViewById<View>(R.id.abas).visibility == View.VISIBLE
-        // Tela inicial: cartão, visão geral e atalhos. Parcelas: só calendário + lista.
-        findViewById<View>(R.id.blocoInicio).visibility = if (i == 0 || !comNav) View.VISIBLE else View.GONE
+        val inicio = i == 0 || !comNav
+        findViewById<View>(R.id.blocoInicio).visibility = if (inicio) View.VISIBLE else View.GONE
         findViewById<View>(R.id.blocoParcelas).visibility = if (i == 3 || !comNav) View.VISIBLE else View.GONE
         val sec = when (i) { 1 -> R.id.secContrato; 2 -> R.id.secSuporte; else -> R.id.secFaturas }
         listOf(R.id.secFaturas, R.id.secContrato, R.id.secSuporte).forEach { findViewById<View>(it).visibility = if (it == sec) View.VISIBLE else View.GONE }
-        if (guardar) (findViewById<View>(R.id.blocoInicio).parent.parent as? android.widget.ScrollView)?.scrollTo(0, 0)
+        // topo: na tela inicial é a saudação com o cartão sobreposto; nas outras abas vira o título da aba
+        val ola = findViewById<TextView>(R.id.tvOla); val sub = findViewById<TextView>(R.id.tvSubOla)
+        val topo = findViewById<View>(R.id.topo)
+        if (inicio) {
+            ola.text = olaInicio; sub.text = subInicio
+            topo.setPadding(topo.paddingLeft, topo.paddingTop, topo.paddingRight, dp(76))
+        } else {
+            ola.text = when (i) { 3 -> "Parcelas"; 1 -> "Contrato"; else -> "Suporte" }
+            sub.text = when (i) { 3 -> "Calendário, valores e pagamentos"; 1 -> "Dados do seu financiamento"; else -> "Estamos aqui para ajudar" }
+            topo.setPadding(topo.paddingLeft, topo.paddingTop, topo.paddingRight, dp(24))
+        }
+        findViewById<View>(R.id.cardAbas).setPadding(dp(16), if (inicio) 0 else dp(4), dp(16), 0)
+        if (guardar) findViewById<android.widget.ScrollView>(R.id.rolagem).scrollTo(0, 0)
         val abas = listOf(R.id.abaFaturas to 0, R.id.abaParcelas to 3, R.id.abaContrato to 1, R.id.abaSuporte to 2)
         abas.forEach { (id, k) -> findViewById<TextView>(id).apply {
-            setTextColor(android.graphics.Color.parseColor(if (k == i) "#FFFFFF" else "#9FB0D0"))
-            setTypeface(null, if (k == i) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
-            if (k == i) setBackgroundResource(R.drawable.nav_ativo) else setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            val ativa = k == i
+            val cor = Color.parseColor(if (ativa) Ui.AZUL else Ui.MUDO)
+            setTextColor(cor); typeface = if (ativa) Ui.MEDIO else Typeface.DEFAULT
+            compoundDrawablesRelative[1]?.mutate()?.setTint(cor)
+            background = if (ativa) Ui.forma(this@MainActivity, Ui.AZUL_CLARO, 16) else null
         } }
     }
 
@@ -428,138 +431,184 @@ class MainActivity : Activity() {
     }
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
-    /* ---------- card estilo PayJoy ---------- */
-    private fun txtH(t: CharSequence, size: Float, color: String, bold: Boolean = false, grav: Int = android.view.Gravity.CENTER, topM: Int = 0): TextView = TextView(this).apply {
-        text = t; textSize = size; setTextColor(android.graphics.Color.parseColor(color))
-        if (bold) setTypeface(typeface, android.graphics.Typeface.BOLD); gravity = grav
-        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = topM }
+    /* ---------- cartão principal (estilo PayJoy) ---------- */
+    private fun linha(vararg v: View, centro: Boolean = true) = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL; if (centro) gravity = Gravity.CENTER_VERTICAL; v.forEach { addView(it) }
     }
-    private fun barraProg(pct: Int): View {
-        val p = pct.coerceIn(0, 100)
-        val track = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(10)).apply { topMargin = dp(6) }
-            background = android.graphics.drawable.GradientDrawable().apply { cornerRadius = dp(6).toFloat(); setColor(android.graphics.Color.parseColor("#E7EBF3")) }
-        }
-        track.addView(View(this).apply {
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, p.toFloat())
-            background = android.graphics.drawable.GradientDrawable().apply { cornerRadius = dp(6).toFloat(); setColor(android.graphics.Color.parseColor("#12875A")) }
-        })
-        track.addView(View(this).apply { layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, (100 - p).toFloat()) })
-        return track
-    }
+    private fun espaco() = View(this).apply { layoutParams = LinearLayout.LayoutParams(0, 1, 1f) }
+
     private fun desenharHero(hero: LinearLayout, d: org.json.JSONObject, fat: List<Fatura>, travar: Boolean, prox: Fatura?, atrasadas: List<Fatura>) {
         hero.removeAllViews()
         val pagas = fat.count { it.pago }
         val pct = if (fat.isNotEmpty()) pagas * 100 / fat.size else 0
-        hero.addView(txtH(if (travar) "● Dispositivo bloqueado" else "● Dispositivo desbloqueado", 13f, if (travar) "#C2410C" else "#12875A", true))
-        hero.addView(txtH("Tempo restante", 12f, "#8893A8", false, topM = 10))
-        val titulo = when {
-            prox == null -> "Tudo em dia"
-            atrasadas.isNotEmpty() -> "Em atraso há ${atrasadas.maxOf { it.diasAtraso }} dia(s)"
-            prox.diasParaVencer <= 0L -> "Vence hoje"
-            else -> "${prox.diasParaVencer} dia(s)"
+        val num = d.optLong("vendaNumero")
+        val chip = when {
+            travar -> Ui.chip(this, "Bloqueado", Ui.VERMELHO, Ui.VERMELHO_CLARO)
+            atrasadas.isNotEmpty() -> Ui.chip(this, "Pagamento em atraso", Ui.LARANJA, Ui.LARANJA_CLARO)
+            else -> Ui.chip(this, "Desbloqueado", Ui.VERDE, Ui.VERDE_CLARO)
         }
-        hero.addView(txtH(titulo, 30f, "#0A1733", true))
-        if (prox != null) {
-            val valor = if (atrasadas.isNotEmpty()) atrasadas.sumOf { it.aPagar } else (if (prox.aPagar > 0.0) prox.aPagar else prox.valor)
-            hero.addView(txtH("Pagamento de ${Faturas.brl.format(valor)}", 16f, "#1B2130", true, topM = 10))
-            hero.addView(txtH("vence em ${prox.venc.format(Faturas.fmt)}", 14f, "#8893A8"))
-            hero.addView(Button(this).apply {
-                text = "Pagar com PIX"; isAllCaps = false; textSize = 16f
-                setTextColor(android.graphics.Color.WHITE); setTypeface(typeface, android.graphics.Typeface.BOLD)
-                setBackgroundResource(R.drawable.btn_verde)
-                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(52)).apply { topMargin = dp(14) }
-                setOnClickListener { Faturas.mostrarPix(this@MainActivity, d, valor, "Parcela ${prox.n} do contrato nº ${d.optLong("vendaNumero")}", "NXC${d.optLong("vendaNumero")}P${prox.n}", prox.n) }
-            })
+        hero.addView(linha(chip, espaco(), Ui.texto(this, "Contrato nº $num", 12f, Ui.MUDO)))
+
+        if (prox == null) {
+            hero.addView(Ui.iconeCirculo(this, R.drawable.ic_check, Ui.VERDE, Ui.VERDE_CLARO, 52).apply {
+                (layoutParams as LinearLayout.LayoutParams).apply { topMargin = dp(18); gravity = Gravity.CENTER_HORIZONTAL } })
+            hero.addView(Ui.texto(this, "Tudo pago", 24f, Ui.TEXTO, Ui.NEGRITO, Gravity.CENTER).apply { layoutParams = Ui.lp(topo = dp(10)) })
+            hero.addView(Ui.texto(this, "Você não tem parcelas em aberto.", 14f, Ui.TEXTO2, grav = Gravity.CENTER).apply { layoutParams = Ui.lp(topo = dp(4)) })
         } else {
-            hero.addView(txtH("Você não tem parcelas em aberto.", 15f, "#1B2130", false, topM = 10))
+            val emAtraso = atrasadas.isNotEmpty()
+            val valor = if (emAtraso) atrasadas.sumOf { it.aPagar } else (if (prox.aPagar > 0.0) prox.aPagar else prox.valor)
+            hero.addView(Ui.texto(this, if (emAtraso) "Total para regularizar" else "Próximo pagamento", 13f, Ui.TEXTO2).apply { layoutParams = Ui.lp(topo = dp(18)) })
+            hero.addView(Ui.texto(this, Faturas.brl.format(valor), 34f, Ui.TEXTO, Ui.NEGRITO).apply { layoutParams = Ui.lp(topo = dp(4)) })
+            val prazo = when {
+                emAtraso -> { val dd = atrasadas.maxOf { it.diasAtraso }; Ui.chip(this, "há $dd ${if (dd == 1L) "dia" else "dias"}", Ui.VERMELHO, Ui.VERMELHO_CLARO, false) }
+                prox.diasParaVencer <= 0L -> Ui.chip(this, "vence hoje", Ui.LARANJA, Ui.LARANJA_CLARO, false)
+                else -> Ui.chip(this, "em ${prox.diasParaVencer} ${if (prox.diasParaVencer == 1L) "dia" else "dias"}", Ui.AZUL, Ui.AZUL_CLARO, false)
+            }
+            val venc = if (emAtraso) "${atrasadas.size} ${if (atrasadas.size == 1) "parcela vencida" else "parcelas vencidas"}" else "Vence ${prox.venc.format(Faturas.fmt)}"
+            hero.addView(linha(Ui.texto(this, venc, 14f, Ui.TEXTO2), View(this).apply { layoutParams = LinearLayout.LayoutParams(dp(10), 1) }, prazo).apply { layoutParams = Ui.lp(topo = dp(8)) })
+            if (!emAtraso && prox.desconto > 0) hero.addView(Ui.texto(this, "Já com ${Faturas.brl.format(prox.desconto)} de desconto por pagar até o vencimento", 13f, Ui.VERDE).apply { layoutParams = Ui.lp(topo = dp(8)) })
+            if (emAtraso) hero.addView(Ui.texto(this, "Inclui multa e juros. Após o pagamento, o aparelho libera sozinho em poucos minutos.", 13f, Ui.TEXTO2).apply { layoutParams = Ui.lp(topo = dp(8)) })
+            val n = if (emAtraso) atrasadas.minOf { it.n } else prox.n
+            hero.addView(Ui.botao(this, "Pagar com PIX", Ui.VERDE, alt = 54) {
+                Faturas.mostrarPix(this, d, valor, if (emAtraso) "Parcelas em atraso do contrato nº $num" else "Parcela ${prox.n} do contrato nº $num", "NXC${num}P$n", n)
+            }.apply { (layoutParams as LinearLayout.LayoutParams).topMargin = dp(18) })
+            val link = Faturas.linkParcela(d, n)
+            if (link.startsWith("https://")) hero.addView(Ui.texto(this, "Pagar com cartão ou boleto", 14f, Ui.AZUL, Ui.MEDIO, Gravity.CENTER).apply {
+                setPadding(0, dp(12), 0, dp(4)); setOnClickListener { abrirUrl(link) } })
         }
-        hero.addView(txtH("Progresso do pagamento: $pct%  ($pagas de ${fat.size})", 13f, "#1B2130", false, android.view.Gravity.START, dp(16)))
-        hero.addView(barraProg(pct))
-        hero.addView(TextView(this).apply {
-            text = "Ver detalhes da conta  ›"; textSize = 14f; setTextColor(android.graphics.Color.parseColor("#1D4ED8")); setTypeface(typeface, android.graphics.Typeface.BOLD)
-            gravity = android.view.Gravity.CENTER; setPadding(0, dp(6), 0, dp(6))
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(12) }
-            setOnClickListener { abrirUrl(portal(d)) }
+
+        hero.addView(Ui.divisor(this, 18, 16))
+        hero.addView(linha(Ui.texto(this, "$pagas de ${fat.size} parcelas pagas", 13f, Ui.TEXTO2), espaco(), Ui.texto(this, "$pct%", 13f, Ui.TEXTO, Ui.MEDIO)))
+        hero.addView(Ui.barra(this, pct))
+        hero.addView(Ui.divisor(this, 16, 14))
+        val aparelho = "${d.optString("marca")} ${d.optString("modelo")}".trim()
+        hero.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            addView(Ui.info(this@MainActivity, "Aparelho", aparelho.ifEmpty { "—" }), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            addView(Ui.info(this@MainActivity, "Device Tag", deviceTag(d), Gravity.END), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
         })
-        hero.addView(View(this).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1)).apply { topMargin = dp(14); bottomMargin = dp(10) }
-            setBackgroundColor(android.graphics.Color.parseColor("#E7EBF3"))
-        })
-        hero.addView(txtH("${d.optString("marca")} ${d.optString("modelo")} · Contrato nº ${d.optLong("vendaNumero")}", 12f, "#8893A8"))
-        hero.addView(txtH("Device Tag: ${deviceTag(d)}", 13f, "#0A1733", true, topM = 2))
+        hero.addView(Ui.texto(this, "Ver todas as parcelas  ›", 14f, Ui.AZUL, Ui.MEDIO, Gravity.CENTER).apply {
+            setPadding(0, dp(16), 0, 0); setOnClickListener { abrirAba(3) } })
     }
 
     /* ---------- calendário das parcelas ---------- */
     private var calMes: java.time.YearMonth? = null
-    private fun celulaCal(txt: String, textColor: String, bgCor: String?, bold: Boolean): TextView = TextView(this).apply {
-        text = txt; gravity = android.view.Gravity.CENTER; textSize = 13f
-        setTextColor(android.graphics.Color.parseColor(if (bgCor != null) "#FFFFFF" else textColor))
-        if (bold) setTypeface(typeface, android.graphics.Typeface.BOLD)
+    private fun celulaCal(txt: String, textColor: String, bgCor: String?, bold: Boolean, hoje: Boolean = false): TextView = TextView(this).apply {
+        text = txt; gravity = Gravity.CENTER; textSize = 13f; includeFontPadding = false
+        setTextColor(Color.parseColor(if (bgCor != null) "#FFFFFF" else textColor))
+        if (bold || hoje) typeface = Ui.MEDIO
         layoutParams = android.widget.GridLayout.LayoutParams().apply {
             width = 0; height = dp(38)
             columnSpec = android.widget.GridLayout.spec(android.widget.GridLayout.UNDEFINED, 1f)
-            setMargins(dp(3), dp(3), dp(3), dp(3))
+            setMargins(dp(2), dp(2), dp(2), dp(2))
         }
-        if (bgCor != null) background = android.graphics.drawable.GradientDrawable().apply { shape = android.graphics.drawable.GradientDrawable.OVAL; setColor(android.graphics.Color.parseColor(bgCor)) }
+        background = when {
+            bgCor != null -> GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor(bgCor)) }
+            hoje -> GradientDrawable().apply { shape = GradientDrawable.OVAL; setStroke(dp(1), Color.parseColor(Ui.AZUL)) }
+            else -> null
+        }
     }
-    private fun desenharCalendario(cont: LinearLayout, fat: List<Fatura>) {
-        cont.removeAllViews()
+    private fun desenharCalendario(alvo: LinearLayout, fat: List<Fatura>) {
+        alvo.removeAllViews()
         if (fat.isEmpty()) return
-        val prox = fat.filter { !it.pago }.minByOrNull { it.venc }
+        // resumo
+        val abertas = fat.filter { !it.pago }
+        alvo.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL; layoutParams = Ui.lp(topo = dp(12))
+            fun bloco(rot: String, v: String, cor: String) = LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.VERTICAL; background = Ui.forma(this@MainActivity, "#FFFFFF", 16, Ui.BORDA); setPadding(dp(14), dp(12), dp(14), dp(12))
+                addView(Ui.texto(this@MainActivity, rot, 12f, Ui.MUDO)); addView(Ui.texto(this@MainActivity, v, 16f, cor, Ui.NEGRITO).apply { layoutParams = Ui.lp(topo = dp(4)) })
+            }
+            addView(bloco("Pagas", "${fat.count { it.pago }}", Ui.VERDE), LinearLayout.LayoutParams(0, -2, 1f).apply { marginEnd = dp(8) })
+            addView(bloco("Em aberto", "${abertas.size}", Ui.AZUL), LinearLayout.LayoutParams(0, -2, 1f).apply { marginEnd = dp(8) })
+            addView(bloco("Restante", Faturas.brl.format(abertas.sumOf { it.aPagar }), Ui.TEXTO), LinearLayout.LayoutParams(0, -2, 1.5f))
+        })
+        val cont = Ui.cartao(this, 16)
+        alvo.addView(cont)
+        val prox = abertas.minByOrNull { it.venc }
         val mes = calMes ?: java.time.YearMonth.from(prox?.venc ?: fat.first().venc)
         calMes = mes
-        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = android.view.Gravity.CENTER_VERTICAL }
         val mesNome = mes.month.getDisplayName(java.time.format.TextStyle.FULL, Locale("pt", "BR")).replaceFirstChar { it.uppercase() } + " " + mes.year
         fun nav(t: String, delta: Long) = TextView(this).apply {
-            text = t; textSize = 22f; setTextColor(android.graphics.Color.parseColor("#1D4ED8")); setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setPadding(dp(16), dp(2), dp(16), dp(2)); setOnClickListener { calMes = mes.plusMonths(delta); desenharCalendario(cont, fat) }
+            text = t; textSize = 20f; setTextColor(Color.parseColor(Ui.AZUL)); gravity = Gravity.CENTER
+            background = Ui.toque(this@MainActivity, Ui.AZUL_CLARO, 18); layoutParams = LinearLayout.LayoutParams(dp(36), dp(36))
+            setOnClickListener { calMes = mes.plusMonths(delta); desenharCalendario(alvo, fat) }
         }
-        header.addView(nav("‹", -1))
-        header.addView(TextView(this).apply { text = mesNome; textSize = 15f; setTextColor(android.graphics.Color.parseColor("#0A1733")); setTypeface(typeface, android.graphics.Typeface.BOLD); gravity = android.view.Gravity.CENTER; layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f) })
-        header.addView(nav("›", 1))
-        cont.addView(header)
-        val grid = android.widget.GridLayout(this).apply { columnCount = 7; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(8) } }
-        listOf("D", "S", "T", "Q", "Q", "S", "S").forEach { grid.addView(celulaCal(it, "#8893A8", null, false)) }
+        cont.addView(linha(nav("‹", -1), Ui.texto(this, mesNome, 16f, Ui.TEXTO, Ui.MEDIO, Gravity.CENTER).apply { layoutParams = LinearLayout.LayoutParams(0, -2, 1f) }, nav("›", 1)))
+        val grid = android.widget.GridLayout(this).apply { columnCount = 7; layoutParams = Ui.lp(topo = dp(10)) }
+        listOf("D", "S", "T", "Q", "Q", "S", "S").forEach { grid.addView(celulaCal(it, Ui.MUDO, null, false)) }
         val offset = mes.atDay(1).dayOfWeek.value % 7
         for (i in 0 until offset) grid.addView(celulaCal("", "#000000", null, false))
         val porDia = fat.filter { java.time.YearMonth.from(it.venc) == mes }.associateBy { it.venc.dayOfMonth }
+        val hoje = java.time.LocalDate.now()
         for (dia in 1..mes.lengthOfMonth()) {
             val f = porDia[dia]
-            val cor = when { f == null -> null; f.pago -> "#12875A"; f.diasAtraso > 0L -> "#C2410C"; else -> "#1D4ED8" }
-            grid.addView(celulaCal(dia.toString(), "#1B2130", cor, f != null))
+            val cor = when { f == null -> null; f.pago -> Ui.VERDE; f.diasAtraso > 0L -> Ui.VERMELHO; else -> Ui.AZUL }
+            grid.addView(celulaCal(dia.toString(), Ui.TEXTO, cor, f != null, mes.atDay(dia) == hoje))
         }
         cont.addView(grid)
-        val leg = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) } }
-        fun legItem(cor: String, t: String) = leg.addView(TextView(this).apply { text = "● $t"; textSize = 11f; setTextColor(android.graphics.Color.parseColor(cor)); setPadding(0, 0, dp(12), 0) })
-        legItem("#12875A", "Paga"); legItem("#1D4ED8", "A vencer"); legItem("#C2410C", "Em atraso")
+        val leg = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER; layoutParams = Ui.lp(topo = dp(10)) }
+        fun legItem(cor: String, t: String) = leg.addView(Ui.texto(this, "●  $t", 12f, Ui.TEXTO2).apply { setPadding(dp(8), 0, dp(8), 0); text = android.text.SpannableString("●  $t").apply { setSpan(android.text.style.ForegroundColorSpan(Color.parseColor(cor)), 0, 1, 0) } })
+        legItem(Ui.VERDE, "Paga"); legItem(Ui.AZUL, "A vencer"); legItem(Ui.VERMELHO, "Em atraso")
         cont.addView(leg)
+        alvo.addView(Ui.titulo(this, "Minhas parcelas"))
     }
 
     private fun preencherAbas(d: org.json.JSONObject) {
         val st = Store(this)
+        val num = d.optLong("vendaNumero")
+        val fat = Faturas.lista(d)
         // Contrato
         val c = findViewById<LinearLayout>(R.id.secContrato); c.removeAllViews()
-        c.addView(texto("Meu contrato", 17f, negrito = true))
-        c.addView(texto("Contrato nº ${d.optLong("vendaNumero")} · ${d.optString("marca")} ${d.optString("modelo")}\nLoja: ${d.optString("lojaNome")}\n${d.optJSONArray("parcelas")?.length() ?: 0} parcelas", 15f, "#3B3A52"))
-        c.addView(texto("O contrato foi assinado na compra. Você pode baixar uma cópia em PDF para guardar.", 14f, "#696784"))
-        botaoAba(c, "📄 Baixar contrato assinado (PDF)", true) { abrirUrl(portal(d) + "?contrato=" + Uri.encode(st.token)) }
-        botaoAba(c, "Ver recibos e quitação no portal") { abrirUrl(portal(d)) }
+        c.addView(Ui.cartao(this).apply {
+            addView(Ui.texto(this@MainActivity, "Resumo do contrato", 15f, Ui.TEXTO, Ui.MEDIO))
+            addView(Ui.divisor(this@MainActivity, 12, 2))
+            addView(Ui.linhaDado(this@MainActivity, "Número", "nº $num"))
+            addView(Ui.linhaDado(this@MainActivity, "Aparelho", "${d.optString("marca")} ${d.optString("modelo")}".trim()))
+            addView(Ui.linhaDado(this@MainActivity, "Device Tag", deviceTag(d)))
+            if (d.optString("lojaNome").isNotEmpty()) addView(Ui.linhaDado(this@MainActivity, "Loja", d.optString("lojaNome")))
+            addView(Ui.linhaDado(this@MainActivity, "Parcelas", "${fat.count { it.pago }} de ${fat.size} pagas"))
+            if (fat.isNotEmpty()) addView(Ui.linhaDado(this@MainActivity, "Valor da parcela", Faturas.brl.format(fat.first().valor)))
+            fat.lastOrNull()?.let { addView(Ui.linhaDado(this@MainActivity, "Última parcela", it.venc.format(Faturas.fmt))) }
+        })
+        c.addView(Ui.cartao(this, 10).apply {
+            addView(Ui.linhaAcao(this@MainActivity, R.drawable.ic_download, "Baixar contrato assinado", "Cópia em PDF para guardar") { abrirUrl(portal(d) + "?contrato=" + Uri.encode(st.token)) })
+            addView(Ui.linhaAcao(this@MainActivity, R.drawable.ic_web, "Recibos e quitação", "Abrir o portal do cliente") { abrirUrl(portal(d)) })
+            addView(Ui.linhaAcao(this@MainActivity, R.drawable.ic_cal_nav, "Mudar dia do vencimento", "Uma vez por contrato") { abrirUrl(portal(d)) })
+        })
         // Suporte
         val s2 = findViewById<LinearLayout>(R.id.secSuporte); s2.removeAllViews()
-        s2.addView(texto("Suporte", 17f, negrito = true))
-        s2.addView(texto("Fale com a gente. Tenha em mãos o número do contrato: ${d.optLong("vendaNumero")}.", 14f, "#696784"))
-        // O atendimento acontece DENTRO do app, com o Suporte NexumCell (não abre WhatsApp).
-        botaoAba(s2, "Falar com o Suporte NexumCell", true) { startActivity(Intent(this, SuporteActivity::class.java)) }
-        botaoAba(s2, "❓ Tirar dúvidas no portal do cliente") { abrirUrl(portal(d)) }
-        botaoAba(s2, "🚨 Meu celular foi roubado ou perdido") { abrirUrl(portal(d)) }
-        s2.addView(texto("Perguntas frequentes", 16f, negrito = true).apply { setPadding(0, 36, 0, 8) })
+        s2.addView(Ui.cartao(this).apply {
+            addView(Ui.iconeCirculo(this@MainActivity, R.drawable.ic_chat, Ui.AZUL, Ui.AZUL_CLARO, 48))
+            addView(Ui.texto(this@MainActivity, "Fale com a NexumCell", 18f, Ui.TEXTO, Ui.NEGRITO).apply { layoutParams = Ui.lp(topo = dp(12)) })
+            addView(Ui.texto(this@MainActivity, "A assistente responde na hora e, se precisar, passa para um atendente da equipe. Funciona mesmo com o aparelho bloqueado.", 14f, Ui.TEXTO2).apply { layoutParams = Ui.lp(topo = dp(6)) })
+            addView(Ui.botao(this@MainActivity, "Iniciar atendimento") { startActivity(Intent(this@MainActivity, SuporteActivity::class.java)) }.apply { (layoutParams as LinearLayout.LayoutParams).topMargin = dp(16) })
+            addView(Ui.texto(this@MainActivity, "Tenha em mãos o número do contrato: $num", 12f, Ui.MUDO, grav = Gravity.CENTER).apply { layoutParams = Ui.lp(topo = dp(10)) })
+        })
+        s2.addView(Ui.cartao(this, 10).apply {
+            addView(Ui.linhaAcao(this@MainActivity, R.drawable.ic_alerta, "Celular roubado ou perdido", "Bloqueie o aparelho à distância", Ui.VERMELHO, Ui.VERMELHO_CLARO) {
+                startActivity(Intent(this@MainActivity, SuporteActivity::class.java)) })
+            addView(Ui.linhaAcao(this@MainActivity, R.drawable.ic_web, "Portal do cliente", "Recibos, quitação e dados do contrato") { abrirUrl(portal(d)) })
+            addView(Ui.linhaAcao(this@MainActivity, R.drawable.ic_tel_escuro, "Ligação de emergência", "190 · 192 · 193") {
+                try { startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:190"))) } catch (e: Exception) { } })
+        })
+        s2.addView(Ui.titulo(this, "Perguntas frequentes"))
+        val faq = Ui.cartao(this, 6)
         listOf(
-            "Paguei e o celular continua bloqueado. O que faço?" to "A liberação é automática em poucos minutos. Toque em Atualizar na aba Parcelas. Se continuar, fale com o Suporte NexumCell.",
-            "Posso pagar antes do vencimento?" to "Sim. Pagando antes você ganha desconto e, quitando tudo, economiza os juros das parcelas que ainda não venceram.",
-            "Como mudo o dia de vencimento?" to "Pelo portal do cliente, em Mudar dia do vencimento (uma vez por contrato).",
-            "Quando o app sai do celular?" to "Ao quitar o contrato, a proteção é removida automaticamente e você pode desinstalar."
-        ).forEach { (p, r) -> s2.addView(texto("• $p", 14f, "#1B1A2E", true)); s2.addView(texto(r, 14f, "#3B3A52")) }
+            "Paguei e o aparelho continua bloqueado" to "A liberação é automática em poucos minutos. Conecte-se à internet e toque em Atualizar, na aba Parcelas. Se continuar, inicie um atendimento.",
+            "Posso pagar antes do vencimento?" to "Sim. Pagando até o vencimento você ganha desconto na parcela. Quitando o contrato, deixa de pagar os juros das parcelas futuras.",
+            "Como mudo o dia de vencimento?" to "Na aba Contrato, em Mudar dia do vencimento. A troca pode ser feita uma vez por contrato.",
+            "Quando o app sai do celular?" to "Assim que o contrato é quitado, a proteção é removida automaticamente e você pode desinstalar o app."
+        ).forEachIndexed { i, (p, r) ->
+            if (i > 0) faq.addView(Ui.divisor(this, 0, 0))
+            val resp = Ui.texto(this, r, 14f, Ui.TEXTO2).apply { visibility = View.GONE; setPadding(dp(14), 0, dp(14), dp(14)) }
+            val seta = Ui.texto(this, "+", 20f, Ui.AZUL)
+            faq.addView(linha(Ui.texto(this, p, 14f, Ui.TEXTO, Ui.MEDIO).apply { layoutParams = LinearLayout.LayoutParams(0, -2, 1f) }, seta).apply {
+                setPadding(dp(14), dp(14), dp(14), dp(14)); isClickable = true
+                setOnClickListener { val abrir = resp.visibility != View.VISIBLE; resp.visibility = if (abrir) View.VISIBLE else View.GONE; seta.text = if (abrir) "–" else "+" }
+            })
+            faq.addView(resp)
+        }
+        s2.addView(faq)
     }
 }
