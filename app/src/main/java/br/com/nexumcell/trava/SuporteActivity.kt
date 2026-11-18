@@ -39,6 +39,8 @@ class SuporteActivity : Activity() {
     private var naoEntendeu = 0
     /** Respostas que não resolveram e pedidos de atendente: o humano só entra em último caso. */
     private var naoResolveu = 0
+    /** A assistente tenta resolver até 5 vezes antes de oferecer o atendente humano. */
+    private val LIMITE = 5
     private var pediuAtendente = 0
     /** Histórico da conversa com a assistente, enviado ao atendente na transferência. */
     private val historico = mutableListOf<String>()
@@ -97,6 +99,8 @@ class SuporteActivity : Activity() {
         super.onResume()
         atualizar = Runnable { if (humano) carregar(false); atualizar?.let { fundo.postDelayed(it, 15000) } }
         fundo.postDelayed(atualizar!!, 15000)
+        // aberto pela tela de bloqueio: tira a sobreposição enquanto o cliente conversa com a assistente
+        if (st.travado) { if (st.saidaAte < System.currentTimeMillis()) st.saidaAte = System.currentTimeMillis() + 15 * 60_000L; TravaTela.esconder(this) }
     }
     override fun onPause() { super.onPause(); atualizar?.let { fundo.removeCallbacks(it) } }
 
@@ -194,8 +198,8 @@ class SuporteActivity : Activity() {
     private fun naoResolveuCom(pergunta: String) {
         naoResolveu++
         historico.add("Cliente: não resolveu")
-        if (naoResolveu < 2) {
-            bolha("Vamos tentar de novo. Me explique com outras palavras o que está acontecendo, ou escolha um dos assuntos abaixo.", false)
+        if (naoResolveu < LIMITE) {
+            bolha("Vamos tentar de novo (tentativa ${naoResolveu + 1} de $LIMITE). Me explique com outras palavras o que está acontecendo, ou escolha um dos assuntos abaixo.", false)
             temas()
         } else oferecerAtendente(pergunta, "Desculpe por não ter conseguido resolver por aqui.")
     }
@@ -203,7 +207,7 @@ class SuporteActivity : Activity() {
     /** Assuntos para o cliente escolher quando a primeira resposta não serviu. */
     private fun temas() {
         val linha = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(0, dp(6), dp(48), 0) }
-        listOf("Paguei e não liberou", "Meu celular bloqueou, e agora?", "Valor da próxima parcela", "Quanto fica para quitar?", "Mudar dia do vencimento").forEach { t ->
+        ((if (bloqueado || st.travado) listOf("Liberar meu celular") else emptyList<String>()) + listOf("Paguei e não liberou", "Meu celular bloqueou, e agora?", "Preciso de mais prazo", "Valor da próxima parcela", "Quanto fica para quitar?", "Mudar dia do vencimento")).forEach { t ->
             linha.addView(chip(t) { linha.visibility = View.GONE; enviar(t) }.apply { layoutParams = LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(6) } })
         }
         lista.addView(linha)
@@ -232,7 +236,7 @@ class SuporteActivity : Activity() {
         if (Assistente.querAtendente(q)) {
             pediuAtendente++
             // último caso: na primeira vez a assistente tenta resolver; se o cliente insistir, oferece o atendente
-            if (pediuAtendente == 1 && naoResolveu == 0) {
+            if (pediuAtendente + naoResolveu < LIMITE) {
                 bolha("Consigo resolver a maioria dos casos na hora, sem espera. Me conta em poucas palavras o que aconteceu?", false)
                 temas()
             } else oferecerAtendente(q, "Tudo bem.")
@@ -258,7 +262,7 @@ class SuporteActivity : Activity() {
             runOnUiThread {
                 if (resp != null) {
                     espera.text = resp; historico.add("Assistente: $resp"); naoEntendeu = 0; opcoesDepois(q)
-                } else if (++naoEntendeu >= 3) {
+                } else if (++naoEntendeu >= LIMITE) {
                     espera.text = "Não consegui entender bem."
                     oferecerAtendente(q, "")
                 } else {
@@ -371,6 +375,17 @@ class SuporteActivity : Activity() {
                 }
             }
         }.start()
+    }
+
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (st.travado) { st.saidaAte = 0L; Policy.abrirTela(this) }
+    }
+    override fun finish() {
+        val volta = st.travado
+        super.finish()
+        if (volta) { st.saidaAte = 0L; Policy.abrirTela(this) }
     }
 
 }

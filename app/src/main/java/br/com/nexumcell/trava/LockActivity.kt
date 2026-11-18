@@ -46,9 +46,9 @@ class LockActivity : Activity() {
 
         findViewById<Button>(R.id.btnVerificar).setOnClickListener { verificar() }
         findViewById<Button>(R.id.btnLoja).setOnClickListener {
-            val c = Store(this).cache()
-            val tel = c?.optString("telefoneSuporte").orEmpty().ifEmpty { c?.optString("lojaTelefone").orEmpty() }.filter { it.isDigit() }
-            discar(tel)
+            // abre o chat com a assistente (ela tenta resolver/liberar; só depois de 5 tentativas chama o suporte humano)
+            Store(this).saidaAte = System.currentTimeMillis() + 15 * 60_000L
+            startActivity(Intent(this, SuporteActivity::class.java).putExtra("bloqueado", true))
         }
         findViewById<Button>(R.id.btnEmergencia).setOnClickListener { discar("") }
         findViewById<Button>(R.id.btnPagar).setOnClickListener {
@@ -98,7 +98,7 @@ class LockActivity : Activity() {
     private val voltar = Runnable { if (Store(this).travado && !Policy.isOwner(this)) Policy.abrirTela(this) }
     override fun onStop() {
         super.onStop()
-        if (Store(this).travado && !Policy.isOwner(this)) { TravaTela.mostrar(this); h.removeCallbacks(voltar); h.postDelayed(voltar, esperaVolta()) }
+        if (Store(this).travado && !Policy.isOwner(this)) { if (Store(this).saidaAte < System.currentTimeMillis()) TravaTela.mostrar(this); h.removeCallbacks(voltar); h.postDelayed(voltar, esperaVolta()) }
     }
     /** Abriu o app do banco ou o app NexumCell pela tela: dá alguns minutos para pagar antes de a tela voltar. */
     private fun esperaVolta(): Long = (Store(this).saidaAte - System.currentTimeMillis()).coerceAtLeast(400L)
@@ -335,7 +335,7 @@ class LockActivity : Activity() {
         val tel = d?.optString("lojaTelefone").orEmpty()
         findViewById<TextView>(R.id.tvLoja).text = listOf(loja, tel).filter { it.isNotEmpty() }.joinToString(" · ")
         findViewById<Button>(R.id.btnLoja).text = I18n.t("Falar com a NexumCell")
-        findViewById<Button>(R.id.btnLoja).visibility = if (tel.isEmpty() && d?.optString("telefoneSuporte").isNullOrEmpty()) View.GONE else View.VISIBLE
+        findViewById<Button>(R.id.btnLoja).visibility = View.VISIBLE
         findViewById<TextView>(R.id.tvRodape).text =
             "Contrato nº ${d?.optLong("vendaNumero") ?: "-"} · protegido por NexumCell"
     }
