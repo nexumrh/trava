@@ -15,6 +15,7 @@ print('    <string name="cacheJson">%s</string>' % escape(json.dumps(d, ensure_a
 print('    <long name="ultimoSyncOk" value="%d" />' % agora)
 print('    <boolean name="avisoOfflineVisto" value="true" />')
 print('    <boolean name="modoLink" value="true" />')
+print('    <long name="linkAtivadoEm" value="%d" />' % (agora - 86400000))
 print('    <string name="token">demo0000000000000000000000guia</string>')
 print('    <string name="apiKey">demo</string>')
 print('    <string name="projectId">demo</string>')
