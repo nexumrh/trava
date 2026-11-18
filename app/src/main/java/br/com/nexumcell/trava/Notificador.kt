@@ -30,7 +30,7 @@ object Notificador {
         val abrir = PendingIntent.getActivity(ctx, ID_ATRASO, Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val n = Notification.Builder(ctx, CANAL_ATRASO)
-            .setSmallIcon(R.drawable.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notif).setColor(0xFF1D4ED8.toInt())
             .setContentTitle(I18n.t(if (r.nivel == 2) "Funções limitadas por atraso" else "Parcela em atraso"))
             .setContentText(texto)
             .setStyle(Notification.BigTextStyle().bigText(texto))
@@ -49,7 +49,7 @@ object Notificador {
         val nm = ctx.getSystemService(NotificationManager::class.java) ?: return
         nm.createNotificationChannel(NotificationChannel("loja", "Avisos da loja", NotificationManager.IMPORTANCE_HIGH))
         val texto = a.optString("texto")
-        val n = Notification.Builder(ctx, "loja").setSmallIcon(R.drawable.ic_launcher)
+        val n = Notification.Builder(ctx, "loja").setSmallIcon(R.drawable.ic_notif).setColor(0xFF1D4ED8.toInt())
             .setContentTitle(I18n.t("Aviso da loja")).setContentText(texto).setStyle(Notification.BigTextStyle().bigText(texto)).setAutoCancel(true).build()
         try { nm.notify(950, n) } catch (e: SecurityException) { }
         enviados.add("aviso-$id"); st.avisosEnviados = enviados.filter { it.isNotEmpty() }.takeLast(200).joinToString(",")
@@ -79,7 +79,7 @@ object Notificador {
             val abrir = PendingIntent.getActivity(ctx, f.n, Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
             val n = Notification.Builder(ctx, CANAL)
-                .setSmallIcon(R.drawable.ic_launcher)
+                .setSmallIcon(R.drawable.ic_notif).setColor(0xFF1D4ED8.toInt())
                 .setContentTitle(titulo)
                 .setContentText(texto)
                 .setStyle(Notification.BigTextStyle().bigText(texto))
