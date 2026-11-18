@@ -1,0 +1,183 @@
++ adb wait-for-device
+++ seq 1 60
++ for i in $(seq 1 60)
+++ adb shell getprop sys.boot_completed
+++ tr -d '\r'
++ '[' 1 = 1 ']'
++ break
++ adb shell getprop sys.boot_completed
+1
++ timeout 180 adb install -r app/build/outputs/apk/debug/app-debug.apk
+Performing Streamed Install
+Success
++ echo 'sem device owner (a trava desligaria o adb)'
+sem device owner (a trava desligaria o adb)
++ adb shell appops set br.com.nexumcell.trava SYSTEM_ALERT_WINDOW allow
++ adb shell dpm set-active-admin br.com.nexumcell.trava/.AdminReceiver
+Success: Active admin set to component {br.com.nexumcell.trava/br.com.nexumcell.trava.AdminReceiver}
++ adb shell dumpsys deviceidle whitelist +br.com.nexumcell.trava
+Added: br.com.nexumcell.trava
++ adb shell pm grant br.com.nexumcell.trava android.permission.READ_PHONE_STATE
++ adb shell pm grant br.com.nexumcell.trava android.permission.POST_NOTIFICATIONS
+
+Exception occurred while executing 'grant':
+java.lang.IllegalArgumentException: Unknown permission: android.permission.POST_NOTIFICATIONS
+	at com.android.server.pm.permission.PermissionManagerService.grantRuntimePermissionInternal(PermissionManagerService.java:1451)
+	at com.android.server.pm.permission.PermissionManagerService.grantRuntimePermission(PermissionManagerService.java:1410)
+	at com.android.server.pm.PackageManagerShellCommand.runGrantRevokePermission(PackageManagerShellCommand.java:2287)
+	at com.android.server.pm.PackageManagerShellCommand.onCommand(PackageManagerShellCommand.java:249)
+	at android.os.BasicShellCommandHandler.exec(BasicShellCommandHandler.java:98)
+	at android.os.ShellCommand.exec(ShellCommand.java:44)
+	at com.android.server.pm.PackageManagerService.onShellCommand(PackageManagerService.java:21646)
+	at android.os.Binder.shellCommand(Binder.java:929)
+	at android.os.Binder.onTransact(Binder.java:813)
+	at android.content.pm.IPackageManager$Stub.onTransact(IPackageManager.java:4603)
+	at com.android.server.pm.PackageManagerService.onTransact(PackageManagerService.java:4305)
+	at android.os.Binder.execTransactInternal(Binder.java:1159)
+	at android.os.Binder.execTransact(Binder.java:1123)
++ true
++ prefs
++ python3 .github/prefs.py
++ adb push /tmp/nexumcell.xml /data/local/tmp/nexumcell.xml
+/tmp/nexumcell.xml: 1 file pushed, 0 skipped. 37.5 MB/s (2817 bytes in 0.000s)
++ adb shell am force-stop br.com.nexumcell.trava
++ adb shell 'run-as br.com.nexumcell.trava mkdir -p shared_prefs'
++ adb shell 'run-as br.com.nexumcell.trava cp /data/local/tmp/nexumcell.xml shared_prefs/nexumcell.xml'
++ adb shell svc wifi disable
++ adb shell svc data disable
++ adb shell settings put system screen_off_timeout 1800000
++ adb shell input keyevent KEYCODE_WAKEUP
++ adb shell wm dismiss-keyguard
++ adb shell am start -n br.com.nexumcell.trava/.MainActivity
+Starting: Intent { cmp=br.com.nexumcell.trava/.MainActivity }
++ sleep 8
++ shot 01-inicio
++ timeout 30 adb exec-out screencap -p
++ ls -la prints/01-inicio.png
+-rw-r--r-- 1 runner runner 254877 Nov 18 00:29 prints/01-inicio.png
++ adb shell input swipe 540 1800 540 700 400
++ sleep 2
++ shot 02-inicio-baixo
++ timeout 30 adb exec-out screencap -p
++ ls -la prints/02-inicio-baixo.png
+-rw-r--r-- 1 runner runner 228915 Nov 18 00:29 prints/02-inicio-baixo.png
++ tap Parcelas
++ timeout 40 python3 .github/tap.py Parcelas
+Parcelas (409, 2184)
++ sleep 3
++ shot 03-parcelas
++ timeout 30 adb exec-out screencap -p
++ ls -la prints/03-parcelas.png
+-rw-r--r-- 1 runner runner 237252 Nov 18 00:29 prints/03-parcelas.png
++ adb shell input swipe 540 1800 540 600 400
++ sleep 2
++ shot 04-parcelas-lista
++ timeout 30 adb exec-out screencap -p
++ ls -la prints/04-parcelas-lista.png
+-rw-r--r-- 1 runner runner 301833 Nov 18 00:29 prints/04-parcelas-lista.png
++ tap Contrato
++ timeout 40 python3 .github/tap.py Contrato
+Contrato (669, 2184)
++ sleep 3
++ shot 05-contrato
++ timeout 30 adb exec-out screencap -p
++ ls -la prints/05-contrato.png
+-rw-r--r-- 1 runner runner 249481 Nov 18 00:29 prints/05-contrato.png
++ tap Suporte
++ timeout 40 python3 .github/tap.py Suporte
+Suporte (929, 2184)
++ sleep 3
++ shot 06-suporte
++ timeout 30 adb exec-out screencap -p
++ ls -la prints/06-suporte.png
+-rw-r--r-- 1 runner runner 229252 Nov 18 00:29 prints/06-suporte.png
++ tap Início
++ timeout 40 python3 .github/tap.py Início
+Início (150, 2184)
++ sleep 3
++ sleep 2
++ tap 'Pagar com PIX'
++ timeout 40 python3 .github/tap.py 'Pagar com PIX'
+Pagar com PIX (540, 1031)
++ sleep 3
++ sleep 3
++ shot 07-pix
++ timeout 30 adb exec-out screencap -p
++ ls -la prints/07-pix.png
+-rw-r--r-- 1 runner runner 204498 Nov 18 00:29 prints/07-pix.png
++ adb shell input keyevent KEYCODE_BACK
++ sleep 2
++ tap Suporte
++ timeout 40 python3 .github/tap.py Suporte
+Suporte (415, 1937)
++ sleep 3
++ tap 'Iniciar atendimento'
++ timeout 40 python3 .github/tap.py 'Iniciar atendimento'
+Iniciar atendimento None
++ sleep 3
++ sleep 4
++ shot 08-chat
++ timeout 30 adb exec-out screencap -p
++ ls -la prints/08-chat.png
+-rw-r--r-- 1 runner runner 112492 Nov 18 00:30 prints/08-chat.png
++ tap 'Qual o valor da próxima parcela?'
++ timeout 40 python3 .github/tap.py 'Qual o valor da próxima parcela?'
+Qual o valor da próxima parcela? (716, 2041)
++ sleep 3
++ sleep 3
++ shot 09-chat-resposta
++ timeout 30 adb exec-out screencap -p
++ ls -la prints/09-chat-resposta.png
+-rw-r--r-- 1 runner runner 202866 Nov 18 00:30 prints/09-chat-resposta.png
++ tap 'Preciso de mais prazo'
++ timeout 40 python3 .github/tap.py 'Preciso de mais prazo'
+Preciso de mais prazo (219, 2041)
++ sleep 3
++ sleep 3
++ shot 10-chat-prazo
++ timeout 30 adb exec-out screencap -p
++ ls -la prints/10-chat-prazo.png
+-rw-r--r-- 1 runner runner 257668 Nov 18 00:30 prints/10-chat-prazo.png
++ adb shell input keyevent KEYCODE_BACK
++ sleep 2
++ prefs travado
++ python3 .github/prefs.py travado
++ adb push /tmp/nexumcell.xml /data/local/tmp/nexumcell.xml
+/tmp/nexumcell.xml: 1 file pushed, 0 skipped. 45.4 MB/s (2818 bytes in 0.000s)
++ adb shell am force-stop br.com.nexumcell.trava
++ adb shell 'run-as br.com.nexumcell.trava mkdir -p shared_prefs'
++ adb shell 'run-as br.com.nexumcell.trava cp /data/local/tmp/nexumcell.xml shared_prefs/nexumcell.xml'
++ adb shell am start -n br.com.nexumcell.trava/.MainActivity
+Starting: Intent { cmp=br.com.nexumcell.trava/.MainActivity }
++ sleep 10
++ shot 11-bloqueado
++ timeout 30 adb exec-out screencap -p
++ ls -la prints/11-bloqueado.png
+-rw-r--r-- 1 runner runner 235766 Nov 18 00:30 prints/11-bloqueado.png
++ adb shell input swipe 540 1800 540 700 400
++ sleep 2
++ shot 12-bloqueado-baixo
++ timeout 30 adb exec-out screencap -p
++ ls -la prints/12-bloqueado-baixo.png
+-rw-r--r-- 1 runner runner 213688 Nov 18 00:30 prints/12-bloqueado-baixo.png
++ tap 'Pedir liberação ou falar com o suporte'
++ timeout 40 python3 .github/tap.py 'Pedir liberação ou falar com o suporte'
+Pedir liberação ou falar com o suporte None
++ sleep 3
++ sleep 4
++ shot 13-chat-bloqueado
++ timeout 30 adb exec-out screencap -p
++ ls -la prints/13-chat-bloqueado.png
+-rw-r--r-- 1 runner runner 213688 Nov 18 00:30 prints/13-chat-bloqueado.png
++ tap 'Liberar meu celular'
++ timeout 40 python3 .github/tap.py 'Liberar meu celular'
+Liberar meu celular None
++ sleep 3
++ sleep 6
++ shot 14-chat-liberar
++ timeout 30 adb exec-out screencap -p
++ ls -la prints/14-chat-liberar.png
+-rw-r--r-- 1 runner runner 212891 Nov 18 00:31 prints/14-chat-liberar.png
++ timeout 30 adb logcat -d
++ grep -iE 'AndroidRuntime|nexum'
++ tail -80
