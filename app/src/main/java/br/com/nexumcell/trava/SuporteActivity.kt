@@ -135,7 +135,11 @@ class SuporteActivity : Activity() {
         ultimoCount = -1; carregar()
     }
 
+    private var transferindo = false
     private fun transferir(motivo: String?) {
+        // evita mandar o mesmo pedido duas vezes (toque duplo ou resposta que já transfere)
+        if (transferindo || System.currentTimeMillis() - st.suporteHumanoEm < 20_000L) { abrirHumano(); return }
+        transferindo = true
         info("Transferindo para um atendente…")
         val d = st.cache()
         val resumo = buildString {
@@ -146,6 +150,7 @@ class SuporteActivity : Activity() {
         Thread {
             val ok = try { Api(this).enviarSuporteMsg(resumo.take(3000), bloqueado, d); true } catch (e: Exception) { false }
             runOnUiThread {
+                transferindo = false
                 if (!ok) { info("Não consegui chamar o atendente agora. Verifique a internet e toque de novo em Chamar atendente."); return@runOnUiThread }
                 st.suporteHumanoEm = System.currentTimeMillis()
                 abrirHumano()
@@ -284,7 +289,13 @@ class SuporteActivity : Activity() {
                 info("Você está falando com a equipe NexumCell. Respondemos aqui mesmo, normalmente em poucos minutos no horário comercial.")
                 for (m in msgs) {
                     val t = (m.opt("texto") as? String).orEmpty()
-                    if (t.startsWith("[Cliente transferido")) continue // resumo interno para o atendente
+                    if (t.startsWith("[Cliente transferido")) {
+                        // o resumo completo é para o atendente; o cliente vê o próprio pedido e o aviso de que a equipe recebeu
+                        val ped = Regex("Pedido:\\s*([^\\n]*)").find(t)?.groupValues?.get(1).orEmpty()
+                        if (ped.isNotBlank()) bolha(ped, true)
+                        info("Seu atendimento foi passado para a equipe NexumCell. Responderemos aqui mesmo. Pode escrever mais detalhes enquanto isso.")
+                        continue
+                    }
                     val minha = (m.opt("de") as? String) == "cliente"
                     bolha(t, minha, if (minha) null else "Atendente NexumCell")
                 }
