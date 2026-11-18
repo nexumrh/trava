@@ -11,7 +11,7 @@ d = {"clienteNome": "Maria Souza", "marca": "Realme", "modelo": "C71", "vendaNum
      "portal": "https://nexumrh.github.io/cliente/"}
 agora = int(time.time() * 1000)
 print("<?xml version='1.0' encoding='utf-8' standalone='yes' ?>\n<map>")
-print('    <string name="cacheJson">%s</string>' % escape(json.dumps(d, ensure_ascii=False), {'"': "&quot;"}))
+print('    <string name="cache">%s</string>' % escape(json.dumps(d, ensure_ascii=False), {'"': "&quot;"}))
 print('    <long name="ultimoSyncOk" value="%d" />' % agora)
 print('    <boolean name="avisoOfflineVisto" value="true" />')
 print('    <boolean name="modoLink" value="true" />')
