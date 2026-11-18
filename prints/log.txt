@@ -1,0 +1,80 @@
+11-18 00:19:16.649  5063  5063 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+11-18 00:19:17.673  5063  5063 D AndroidRuntime: Shutting down VM
+11-18 00:19:19.419   491  5082 I PackageDexOptimizer: Running dexopt (dexoptNeeded=1) on: /data/app/~~UHfBEfxBaKRkMVgrX8iz-Q==/br.com.nexumcell.trava-EkgLOc8KZOzpzY_Kv5fsxg==/base.apk pkg=br.com.nexumcell.trava isa=x86_64 dexoptFlags=boot_complete,debuggable,public,enable_hidden_api_checks targetFilter=verify oatDir=/data/app/~~UHfBEfxBaKRkMVgrX8iz-Q==/br.com.nexumcell.trava-EkgLOc8KZOzpzY_Kv5fsxg==/oat classLoaderContext=PCL[]{}
+11-18 00:19:19.420   422   422 V installd: DexInv: --- BEGIN '/data/app/~~UHfBEfxBaKRkMVgrX8iz-Q==/br.com.nexumcell.trava-EkgLOc8KZOzpzY_Kv5fsxg==/base.apk' ---
+11-18 00:19:19.429  5087  5087 I dex2oat32: /apex/com.android.art/bin/dex2oat32 --input-vdex-fd=-1 --output-vdex-fd=9 --updatable-bcp-packages-file=/system/etc/updatable-bcp-packages.txt --resolve-startup-const-strings=true --max-image-block-size=524288 --compiler-filter=verify --debuggable --classpath-dir=/data/app/~~UHfBEfxBaKRkMVgrX8iz-Q==/br.com.nexumcell.trava-EkgLOc8KZOzpzY_Kv5fsxg== --class-loader-context=PCL[]{} --generate-mini-debug-info --compact-dex-level=none --compilation-reason=boot
+11-18 00:19:19.852   422   422 V installd: DexInv: --- END '/data/app/~~UHfBEfxBaKRkMVgrX8iz-Q==/br.com.nexumcell.trava-EkgLOc8KZOzpzY_Kv5fsxg==/base.apk' (success) ---
+11-18 00:19:19.885   491  5082 I BackgroundDexOptService: Pinning optimized code {android, br.com.nexumcell.trava}
+11-18 00:19:19.892   491  5082 D IorapForwardingService: onPackagesUpdated: br.com.nexumcell.trava
+11-18 00:19:23.182  5122  5122 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-18 00:19:23.183  5122  5122 I AndroidRuntime: Using default boot image
+11-18 00:19:23.183  5122  5122 I AndroidRuntime: Leaving lock profiling enabled
+11-18 00:19:23.232  5122  5122 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+11-18 00:19:24.255  5122  5122 D AndroidRuntime: Shutting down VM
+11-18 00:19:26.868   491   548 I AppsFilter: interaction: PackageSetting{f6453ec br.com.nexumcell.trava/10167} -> PackageSetting{138c2d8 com.google.android.gm/10132} BLOCKED
+11-18 00:19:30.961  5163  5163 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-18 00:19:30.963  5163  5163 I AndroidRuntime: Using default boot image
+11-18 00:19:30.963  5163  5163 I AndroidRuntime: Leaving lock profiling enabled
+11-18 00:19:31.012  5163  5163 D AndroidRuntime: Calling main entry com.android.commands.input.Input
+11-18 00:19:31.131  5163  5163 D AndroidRuntime: Shutting down VM
+11-18 00:19:31.298  2994  5177 W NexumSync: sem conexão: Unable to resolve host "identitytoolkit.googleapis.com": No address associated with hostname
+11-18 00:19:31.928   491   782 I ActivityTaskManager: START u0 {act=android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS dat=package:br.com.nexumcell.trava cmp=com.android.settings/.fuelgauge.RequestIgnoreBatteryOptimizations} from uid 10167
+11-18 00:19:33.796  5182  5182 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-18 00:19:33.829  5182  5182 I AndroidRuntime: Using default boot image
+11-18 00:19:33.831  5182  5182 I AndroidRuntime: Leaving lock profiling enabled
+11-18 00:19:33.978  5182  5182 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+11-18 00:19:35.008  5182  5182 D AndroidRuntime: Shutting down VM
+11-18 00:19:38.508  5200  5200 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-18 00:19:38.510  5200  5200 I AndroidRuntime: Using default boot image
+11-18 00:19:38.510  5200  5200 I AndroidRuntime: Leaving lock profiling enabled
+11-18 00:19:38.557  5200  5200 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+11-18 00:19:39.570  5200  5200 D AndroidRuntime: Shutting down VM
+11-18 00:19:47.324  5222  5222 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-18 00:19:47.325  5222  5222 I AndroidRuntime: Using default boot image
+11-18 00:19:47.325  5222  5222 I AndroidRuntime: Leaving lock profiling enabled
+11-18 00:19:47.384  5222  5222 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+11-18 00:19:48.401  5222  5222 D AndroidRuntime: Shutting down VM
+11-18 00:19:55.166  5243  5243 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-18 00:19:55.168  5243  5243 I AndroidRuntime: Using default boot image
+11-18 00:19:55.168  5243  5243 I AndroidRuntime: Leaving lock profiling enabled
+11-18 00:19:55.217  5243  5243 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+11-18 00:19:56.233  5243  5243 D AndroidRuntime: Shutting down VM
+11-18 00:19:58.830   491   548 I AppsFilter: interaction: PackageSetting{f6453ec br.com.nexumcell.trava/10167} -> PackageSetting{1d67a4a com.google.android.googlequicksearchbox/10123} BLOCKED
+11-18 00:20:02.958  5399  5399 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-18 00:20:02.960  5399  5399 I AndroidRuntime: Using default boot image
+11-18 00:20:02.960  5399  5399 I AndroidRuntime: Leaving lock profiling enabled
+11-18 00:20:03.013  5399  5399 D AndroidRuntime: Calling main entry com.android.commands.input.Input
+11-18 00:20:03.087  5399  5399 D AndroidRuntime: Shutting down VM
+11-18 00:20:03.247  2994  5412 W NexumSync: sem conexão: Unable to resolve host "identitytoolkit.googleapis.com": No address associated with hostname
+11-18 00:20:05.665   491  2280 I ActivityManager: Force stopping br.com.nexumcell.trava appid=10167 user=0: from pid 5424
+11-18 00:20:05.665   491  2280 I ActivityManager: Killing 2994:br.com.nexumcell.trava/u0a167 (adj 102): stop br.com.nexumcell.trava due to from pid 5424
+11-18 00:20:05.669   491  2280 W ActivityTaskManager: Force removing ActivityRecord{5ebd8b u0 br.com.nexumcell.trava/.MainActivity t9 f}}: app died, no saved state
+11-18 00:20:05.673   491   591 W InputDispatcher: channel '6d2beef br.com.nexumcell.trava/br.com.nexumcell.trava.MainActivity (server)' ~ Consumer closed input channel or an error occurred.  events=0x9
+11-18 00:20:05.673   491   591 E InputDispatcher: channel '6d2beef br.com.nexumcell.trava/br.com.nexumcell.trava.MainActivity (server)' ~ Channel is unrecoverably broken and will be disposed!
+11-18 00:20:05.676   491  2280 W InputDispatcher: Attempted to unregister already unregistered input channel '6d2beef br.com.nexumcell.trava/br.com.nexumcell.trava.MainActivity (server)'
+11-18 00:20:05.937   491  2280 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=br.com.nexumcell.trava/.MainActivity} from uid 2000
+11-18 00:20:05.964   491   533 I ActivityManager: Start proc 5435:br.com.nexumcell.trava/u0a167 for pre-top-activity {br.com.nexumcell.trava/br.com.nexumcell.trava.MainActivity}
+11-18 00:20:06.182  5435  5435 I nexumcell.trav: Late-enabling -Xcheck:jni
+11-18 00:20:06.224  5435  5435 I nexumcell.trav: Unquickening 12 vdex files!
+11-18 00:20:06.225  5435  5435 W nexumcell.trav: Unexpected CPU variant for X86 using defaults: x86_64
+11-18 00:20:06.404  5435  5435 I TetheringManager: registerTetheringEventCallback:br.com.nexumcell.trava
+11-18 00:20:06.563  5435  5467 W NexumSync: sem conexão: Unable to resolve host "identitytoolkit.googleapis.com": No address associated with hostname
+11-18 00:20:07.489   491   531 D ArtManagerInternalImpl: /data/misc/iorapd/br.com.nexumcell.trava/7/br.com.nexumcell.trava.MainActivity/compiled_traces/compiled_trace.pb doesn't exist
+11-18 00:20:07.492   491   531 I ActivityTaskManager: Displayed br.com.nexumcell.trava/.MainActivity: +1s527ms
+11-18 00:20:11.119   423  5443 I iorapd  : Perfetto TraceBuffer saved to file: /data/misc/iorapd/br.com.nexumcell.trava/7/br.com.nexumcell.trava.MainActivity/raw_traces/1794961211119541104.perfetto_trace.pb
+11-18 00:20:12.169  5435  5471 D ProfileInstaller: Installing profile for br.com.nexumcell.trava
+11-18 00:20:16.262  5476  5476 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-18 00:20:16.263  5476  5476 I AndroidRuntime: Using default boot image
+11-18 00:20:16.263  5476  5476 I AndroidRuntime: Leaving lock profiling enabled
+11-18 00:20:16.316  5476  5476 D AndroidRuntime: Calling main entry com.android.commands.input.Input
+11-18 00:20:16.747  5476  5476 D AndroidRuntime: Shutting down VM
+11-18 00:20:19.523  5493  5493 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-18 00:20:19.525  5493  5493 I AndroidRuntime: Using default boot image
+11-18 00:20:19.525  5493  5493 I AndroidRuntime: Leaving lock profiling enabled
+11-18 00:20:19.573  5493  5493 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+11-18 00:20:20.590  5493  5493 D AndroidRuntime: Shutting down VM
+11-18 00:20:28.326  5516  5516 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+11-18 00:20:28.328  5516  5516 I AndroidRuntime: Using default boot image
+11-18 00:20:28.328  5516  5516 I AndroidRuntime: Leaving lock profiling enabled
+11-18 00:20:28.378  5516  5516 D AndroidRuntime: Calling main entry com.android.commands.uiautomator.Launcher
+11-18 00:20:29.394  5516  5516 D AndroidRuntime: Shutting down VM
