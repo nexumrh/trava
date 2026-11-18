@@ -236,6 +236,8 @@ class SuporteActivity : Activity() {
         bolha(q, true); historico.add("Cliente: $q")
         val d = st.cache()
         val ql = q.lowercase()
+        if (esperandoBo && Regex("\\d{5,}").containsMatchIn(q)) { enviarBo(q); return }
+        if (Regex("roub|furt|assalt|perdi (o |meu )?(celular|aparelho|telefone)|perdeu|levaram (o |meu )?(celular|aparelho)").containsMatchIn(ql)) { pedirRoubo(q); return }
         if (Regex("liberar meu celular|desbloque|destrav|liberar o celular|liberar o aparelho|libera meu|liberação").containsMatchIn(ql) && (bloqueado || st.travado)) { pedirLiberacao(q); return }
         if (Regex("mais prazo|prazo extra|mais tempo|prorrog|adiar|48 ?h|dois dias|2 dias|pagar depois|pagar mais tarde|atrasar").containsMatchIn(ql)) { pedirPrazo(); return }
         if (Assistente.querAtendente(q)) {
@@ -388,6 +390,50 @@ class SuporteActivity : Activity() {
         }.start()
     }
 
+
+
+    /* ---------- roubo, furto ou perda: a assistente bloqueia na hora e explica o que fazer ---------- */
+    private var esperandoBo = false
+    private fun pedirRoubo(relato: String) {
+        historico.add("Assistente: perguntou o tipo (roubo/furto/perda)")
+        bolha("Sinto muito pelo que aconteceu. Posso bloquear agora os seus aparelhos NexumCell para que ninguém consiga usar nem resetar. O que aconteceu?", false)
+        val linha = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(8), 0, 0) }
+        listOf("Roubo", "Furto", "Perda").forEach { t -> linha.addView(chip(t) { linha.visibility = View.GONE; bolha(t, true); confirmarRoubo(t, relato) }) }
+        linha.addView(chip("Foi engano") { linha.visibility = View.GONE; bolha("Tudo bem, nada foi bloqueado. Posso ajudar em mais alguma coisa?", false) })
+        lista.addView(linha); rolar.post { rolar.fullScroll(ScrollView.FOCUS_DOWN) }
+    }
+    private fun confirmarRoubo(tipo: String, relato: String) {
+        val espera = bolha("Bloqueando…", false)
+        Thread {
+            val r = try { acaoCliente("roubo") { put("tipo", tipo); put("relato", relato.take(300)) } } catch (e: Exception) { null }
+            runOnUiThread {
+                if (r == null || r.first !in 200..299 || !r.second.optBoolean("ok")) {
+                    espera.text = "Não consegui bloquear agora porque estou sem conexão. Tente de novo em instantes; se não der, use o portal do cliente em outro celular: Comunicar roubo, furto ou perda."
+                    return@runOnUiThread
+                }
+                val n = r.second.optInt("bloqueados", 1)
+                val bo = if (tipo == "Roubo") "ligue 190 ou vá à delegacia e registre o boletim de ocorrência" else "registre o boletim de ocorrência na Delegacia Eletrônica do seu estado"
+                espera.text = "Pronto: bloqueei ${if (n > 1) "os seus $n aparelhos" else "o seu aparelho"}. Ninguém consegue usar nem resetar.\n\n" +
+                    "Agora faça isto:\n1. Boletim de ocorrência: $bo.\n2. Bloqueie o celular, o chip e os apps de banco no Celular Seguro (gov.br).\n" +
+                    "3. Peça à sua operadora o bloqueio da linha e um chip novo com o mesmo número.\n4. Quando tiver o número do boletim, envie aqui neste chat.\n\n" +
+                    "As parcelas continuam valendo. Se o aparelho for encontrado, a loja libera o uso."
+                historico.add("Assistente: bloqueou por $tipo")
+                esperandoBo = true
+                rolar.post { rolar.fullScroll(ScrollView.FOCUS_DOWN) }
+            }
+        }.start()
+    }
+    private fun enviarBo(q: String) {
+        val bo = Regex("[\\d./-]{5,}").find(q)?.value.orEmpty().ifEmpty { q.take(60) }
+        val espera = bolha("Anexando o boletim…", false)
+        Thread {
+            val r = try { acaoCliente("roubo") { put("bo", bo) } } catch (e: Exception) { null }
+            runOnUiThread {
+                if (r != null && r.first in 200..299) { esperandoBo = false; espera.text = "Recebi o boletim nº $bo e anexei ao seu contrato. A equipe NexumCell acompanha o caso; se o aparelho for encontrado, você será avisado." }
+                else espera.text = "Não consegui enviar agora. Tente de novo em instantes."
+            }
+        }.start()
+    }
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
