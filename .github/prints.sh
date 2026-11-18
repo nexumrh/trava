@@ -6,7 +6,7 @@ adb wait-for-device
 for i in $(seq 1 60); do [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1" ] && break; sleep 5; done
 adb shell getprop sys.boot_completed
 timeout 180 adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell dpm set-device-owner $PKG/.AdminReceiver || true
+echo "sem device owner (a trava desligaria o adb)"
 prefs() { python3 .github/prefs.py $1 > /tmp/nexumcell.xml; adb push /tmp/nexumcell.xml /data/local/tmp/nexumcell.xml; adb shell am force-stop $PKG;
   adb shell "run-as $PKG mkdir -p shared_prefs"; adb shell "run-as $PKG cp /data/local/tmp/nexumcell.xml shared_prefs/nexumcell.xml"; }
 prefs
