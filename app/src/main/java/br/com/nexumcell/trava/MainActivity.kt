@@ -347,6 +347,27 @@ class MainActivity : Activity() {
                 })
             })
         }
+        // recompra: quem paga em dia ganha limite para um celular novo antes de a trava sair do aparelho
+        d.optJSONObject("preAprovado")?.let { pre ->
+            val valor = pre.optDouble("valor", 0.0); val ate = pre.optString("ate")
+            val hojeIso = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+            if (valor > 0 && ate >= hojeIso) lista.addView(Ui.cartao(this).apply {
+                addView(LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
+                    addView(Ui.iconeCirculo(this@MainActivity, R.drawable.ic_check, Ui.VERDE, Ui.VERDE_CLARO, 40))
+                    addView(LinearLayout(this@MainActivity).apply {
+                        orientation = LinearLayout.VERTICAL; setPadding(dp(14), 0, 0, 0)
+                        addView(Ui.texto(this@MainActivity, "Crédito pré-aprovado: ${Faturas.brl.format(valor)}", 15f, Ui.TEXTO, Ui.MEDIO))
+                        val ent = if (pre.has("entradaPct")) pre.optInt("entradaPct") else -1
+                        val desc = pre.optInt("descontoPct", 0)
+                        val cond = listOfNotNull(if (ent >= 0) "entrada a partir de $ent%" else null, if (desc > 0) "juros menores" else null).joinToString(" e ")
+                        val validade = try { SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR")).format(SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(ate)!!) } catch (e: Exception) { ate }
+                        addView(Ui.texto(this@MainActivity, "Você paga em dia! Troque de celular${if (cond.isNotEmpty()) " com $cond" else ""}. Válido até $validade.", 13f, Ui.TEXTO2).apply { layoutParams = Ui.lp(topo = dp(4)) })
+                    }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+                })
+                addView(Ui.botao(this@MainActivity, "Quero meu celular novo", Ui.VERDE) { pedirRecompra() })
+            })
+        }
         val loja = listOf(d.optString("lojaNome"), d.optString("lojaTelefone")).filter { it.isNotEmpty() }.joinToString(" · ")
         rodape.text = buildString {
             if (loja.isNotEmpty()) append("$loja\n")
@@ -360,6 +381,28 @@ class MainActivity : Activity() {
         findViewById<View>(R.id.cardAviso).visibility = if (st.avisoOfflineVisto) View.GONE else View.VISIBLE
         preencherAbas(d)
         abrirAba(abaAtual, false)
+    }
+
+    private fun pedirRecompra() {
+        val st = Store(this)
+        android.widget.Toast.makeText(this, "Enviando o seu pedido…", android.widget.Toast.LENGTH_SHORT).show()
+        Thread {
+            val (ok, msg) = try {
+                val serv = st.cache()?.optString("servidor").orEmpty().ifEmpty { st.cache()?.optString("servidorPix").orEmpty() }.ifEmpty { "https://nexumcell-servidor.wevellenerrera21.workers.dev" }.trimEnd('/')
+                val c = java.net.URL("$serv/api/cliente-app").openConnection() as java.net.HttpURLConnection
+                c.requestMethod = "POST"; c.connectTimeout = 15000; c.readTimeout = 25000; c.doOutput = true
+                c.setRequestProperty("Content-Type", "application/json")
+                c.outputStream.use { it.write(org.json.JSONObject().put("acao", "recompra").put("token", st.token).toString().toByteArray()) }
+                val code = c.responseCode
+                val txt = (if (code in 200..299) c.inputStream else c.errorStream)?.bufferedReader()?.readText().orEmpty()
+                val j = try { org.json.JSONObject(txt) } catch (e: Exception) { org.json.JSONObject() }
+                if (code in 200..299) true to "Pedido enviado! A NexumCell vai chamar você no WhatsApp com os modelos e as condições."
+                else false to j.optString("erro").ifEmpty { "Não foi possível enviar agora. Tente de novo." }
+            } catch (e: Exception) { false to "Sem conexão. Conecte-se à internet e tente de novo." }
+            runOnUiThread {
+                android.app.AlertDialog.Builder(this).setTitle(if (ok) "Recebemos o seu pedido" else "Não foi possível").setMessage(msg).setPositiveButton("OK", null).show()
+            }
+        }.start()
     }
 
     /* ---------- abas: Início (0) · Parcelas (3) · Contrato (1) · Suporte (2) ---------- */
