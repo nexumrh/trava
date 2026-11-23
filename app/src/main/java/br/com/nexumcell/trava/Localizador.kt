@@ -10,9 +10,11 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 /**
- * Localização SOMENTE quando o próprio cliente comunicou roubo, furto ou perda pelo portal
- * e autorizou a localização no formulário (roubo.localizar = true). Em uso normal o app
- * nunca lê a localização.
+ * Localização SOMENTE em dois casos:
+ * 1) o próprio cliente comunicou roubo, furto ou perda pelo portal e autorizou (roubo.localizar = true);
+ * 2) o dono ou o financeiro fez um pedido pontual (localizarPedido) para recuperar o aparelho,
+ *    previsto no contrato (atraso acima do prazo ou roubo). Cada pedido lê a posição uma vez só.
+ * Em uso normal o app nunca lê a localização, e com o contrato quitado nunca mais lê.
  */
 object Localizador {
     @SuppressLint("MissingPermission")

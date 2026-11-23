@@ -72,13 +72,20 @@ object Sync {
         // roubo comunicado com autorização do cliente: manda a localização a cada sincronização
         val roubo = d.optJSONObject("roubo")
         val localizar = roubo != null && roubo.optLong("liberadoEm", 0L) == 0L && roubo.optBoolean("localizar")
-        localCache = if (localizar) Localizador.obter(ctx) else null
+        // pedido pontual do dono/financeiro (atraso acima do prazo ou roubo), previsto no contrato:
+        // pega a posição UMA vez por pedido, só com o contrato em aberto e pedido de até 24 h
+        val ped = d.optJSONObject("localizarPedido")
+        val pedId = ped?.optString("id").orEmpty()
+        val pedido = !r.final && pedId.isNotEmpty() && pedId != st.localPedidoFeito && agora - ped!!.optLong("em", 0L) < 24 * 3600 * 1000L
+        localCache = if (localizar || pedido) Localizador.obter(ctx) else null
+        pedidoCache = if (pedido) pedId else ""
         val estado = "${r.travar}|${r.final}|$imeiConfere|${r.nivel}|${chip["id"]}|${st.pushToken.take(12)}|${st.liberadoLocalAte}|${Policy.adminAtivo(ctx)}|${Relogio.adulterado(ctx)}|${GoogleLock.status(ctx)}|${Policy.frpOk(ctx)}|${st.codigoBloqueadoAte > System.currentTimeMillis()}"
-        if (online && (localizar || estado != st.ultimoEstado || agora - st.ultimoCheckin > CHECKIN_MS)) {
+        if (online && (localizar || pedido || estado != st.ultimoEstado || agora - st.ultimoCheckin > CHECKIN_MS)) {
             try {
                 Api(ctx).enviarCheckin(checkin(ctx, r))
                 st.ultimoEstado = estado
                 st.ultimoCheckin = agora
+                if (pedido) st.localPedidoFeito = pedId
             } catch (e: Exception) { Log.w(TAG, "checkin: ${e.message}") }
         }
         Policy.aplicar(ctx, d, r)
@@ -106,6 +113,7 @@ object Sync {
     @Volatile private var imeiConfereCache: Boolean = true
     @Volatile private var chipCache: Map<String, Any?> = emptyMap()
     @Volatile private var localCache: Map<String, Any?>? = null
+    @Volatile private var pedidoCache: String = ""
 
     /**
      * Identifica o chip em uso sem guardar o número dele: operadora + resumo (SHA-256) do ICCID.
@@ -143,6 +151,7 @@ object Sync {
         "imeiConfere" to imeiConfereCache,
         "chip" to chipCache,
         "local" to localCache,
+        "localPedido" to pedidoCache,
         "versao" to BuildConfig.VERSION_NAME,
         "push" to Store(ctx).pushToken,
         "liberadoCodigoAte" to Store(ctx).liberadoLocalAte,
