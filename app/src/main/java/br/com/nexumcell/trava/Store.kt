@@ -119,6 +119,10 @@ class Store(ctx: Context) {
     var chipBase: String
         get() = s("chipBase")
         set(v) { ps("chipBase", v) }
+    /** Último pedido de localização já respondido (cada pedido do painel é atendido uma vez só). */
+    var localPedidoFeito: String
+        get() = s("localPedidoFeito")
+        set(v) { ps("localPedidoFeito", v) }
 
     // Notificação instantânea (Firebase Cloud Messaging)
     var pushToken: String
