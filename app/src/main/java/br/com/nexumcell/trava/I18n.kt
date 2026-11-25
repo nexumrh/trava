@@ -58,6 +58,8 @@ object I18n {
         "Sua parcela vence hoje" to "Su cuota vence hoy",
         "Sua parcela vence em 3 dias" to "Su cuota vence en 3 días",
         "Aviso da loja" to "Aviso de la tienda",
+        "Mensagem do suporte NexumCell" to "Mensaje del soporte NexumCell",
+        "Você tem uma nova mensagem da equipe NexumCell." to "Tienes un nuevo mensaje del equipo NexumCell.",
         "Código PIX copiado. Cole no app do seu banco." to "Código PIX copiado. Péguelo en la app de su banco.",
         "Gerando PIX…" to "Generando PIX…",
         "O IMEI deste aparelho não confere com o contrato. Procure a loja." to "El IMEI de este equipo no coincide con el contrato. Acuda a la tienda.",

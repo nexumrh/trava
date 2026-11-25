@@ -143,6 +143,20 @@ class Api(private val ctx: Context) {
         out.sortBy { (it.opt("em") as? Long) ?: 0L }
         return out
     }
+
+    /** Cabeçalho da conversa de suporte (naoLidoCliente, ultimaMsg, atualizadoEm): para avisar que a equipe respondeu. */
+    fun buscarSuporteCab(): JSONObject? {
+        val (code, txt) = http("GET", "${suporteBase()}/${st.token}", null, idToken())
+        if (code !in 200..299) return null
+        val f = JSONObject(txt).optJSONObject("fields") ?: return null
+        return Fs.decodeFields(f)
+    }
+
+    /** O cliente abriu a conversa: a mensagem da equipe foi lida. */
+    fun marcarSuporteLido() {
+        val body = JSONObject().put("fields", JSONObject().put("naoLidoCliente", Fs.encode(false)))
+        http("PATCH", "${suporteBase()}/${st.token}?updateMask.fieldPaths=naoLidoCliente", body.toString(), idToken())
+    }
 }
 
 /** Conversão entre o formato tipado do Firestore REST e JSON comum. */

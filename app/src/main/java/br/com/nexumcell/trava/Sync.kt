@@ -92,6 +92,15 @@ object Sync {
 
         try { Notificador.avisar(ctx, d) } catch (e: Exception) { Log.w(TAG, "avisos: ${e.message}") }
         try { Notificador.avisoLoja(ctx, d) } catch (e: Exception) { }
+        // a equipe respondeu no suporte do app: avisa uma vez por mensagem nova
+        if (online) try {
+            val cab = Api(ctx).buscarSuporteCab()
+            val em = (cab?.opt("atualizadoEm") as? Long) ?: 0L
+            if (cab != null && cab.optBoolean("naoLidoCliente") && em > 0 && st.suporteAvisadoEm != em) {
+                Notificador.suporte(ctx, cab.optString("ultimaMsg"))
+                st.suporteAvisadoEm = em
+            }
+        } catch (e: Exception) { Log.w(TAG, "suporte: ${e.message}") }
         WidgetParcela.atualizar(ctx)
         if (online) Updater.verificar(ctx)
 

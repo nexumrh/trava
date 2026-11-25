@@ -41,6 +41,19 @@ object Notificador {
     }
 
     /** Aviso em massa enviado pela loja (ex.: feriado). Aparece uma vez por aviso. */
+    /** A equipe NexumCell respondeu (ou reabriu) a conversa de suporte: aviso com a mensagem; o toque abre a conversa. */
+    fun suporte(ctx: Context, texto: String) {
+        val nm = ctx.getSystemService(NotificationManager::class.java) ?: return
+        nm.createNotificationChannel(NotificationChannel("suporte", "Mensagens do suporte", NotificationManager.IMPORTANCE_HIGH))
+        val abrir = PendingIntent.getActivity(ctx, 960, Intent(ctx, SuporteActivity::class.java).putExtra("humano", true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val corpo = texto.ifBlank { I18n.t("Você tem uma nova mensagem da equipe NexumCell.") }
+        val n = Notification.Builder(ctx, "suporte").setSmallIcon(R.drawable.ic_notif).setColor(0xFF1D4ED8.toInt())
+            .setContentTitle(I18n.t("Mensagem do suporte NexumCell")).setContentText(corpo).setStyle(Notification.BigTextStyle().bigText(corpo))
+            .setContentIntent(abrir).setAutoCancel(true).build()
+        try { nm.notify(960, n) } catch (e: SecurityException) { }
+    }
+
     fun avisoLoja(ctx: Context, d: JSONObject) {
         val a = d.optJSONObject("aviso") ?: return
         val id = a.optString("id"); if (id.isEmpty() || a.optLong("ate", 0L) < System.currentTimeMillis()) return

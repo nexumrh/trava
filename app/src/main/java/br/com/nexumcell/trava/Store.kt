@@ -80,6 +80,10 @@ class Store(ctx: Context) {
     var ultimaChecagemUpdate: Long
         get() = l("ultimaChecagemUpdate")
         set(v) { pl("ultimaChecagemUpdate", v) }
+    /** atualizadoEm da última mensagem do suporte já avisada (para não repetir a notificação). */
+    var suporteAvisadoEm: Long
+        get() = l("suporteAvisadoEm")
+        set(v) { pl("suporteAvisadoEm", v) }
     var avisosEnviados: String
         get() = s("avisosEnviados")
         set(v) { ps("avisosEnviados", v) }
