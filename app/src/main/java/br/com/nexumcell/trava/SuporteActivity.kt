@@ -92,7 +92,11 @@ class SuporteActivity : Activity() {
         raiz.addView(barra)
         setContentView(raiz)
 
+        // aberto pelo aviso "Mensagem do suporte": vai direto para a conversa com a equipe
+        if (intent?.getBooleanExtra("humano", false) == true) st.suporteHumanoEm = System.currentTimeMillis()
         if (humano) abrirHumano() else abrirAssistente()
+        Thread { try { Api(this).marcarSuporteLido() } catch (e: Exception) { } }.start()
+        try { (getSystemService(android.app.NotificationManager::class.java))?.cancel(960) } catch (e: Exception) { }
     }
 
     override fun onResume() {
